@@ -26,7 +26,7 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 
 def main():
     params = {
-        "train_motor": 0,
+        "train_motor": 1,
         "test_motor":
         3,
         "train_flag":
@@ -38,7 +38,7 @@ def main():
         # "model_dic_path": "saved_model/2019_09_04_19_57_17_cnn_lstm_sliding_20_motor_train_3_test_3",
         # "model_dic_path": "saved_model/2019_09_04_19_34_08_cnn_lstm_sliding_20_motor_train_2_test_2",
         "model_dic_path":
-        "saved_model/2019_11_18_11_00_53_cnn_lstm_sliding_20_motor_train_0_test_3",
+        "saved_model/2019_11_18_16_59_02_cnn_lstm_sliding_20_motor_train_0_test_3",
         # "saved_model/2019_09_27_14_40_48_cnn_lstm_sliding_20_motor_train_0_test_3",
     }
     model_params = {

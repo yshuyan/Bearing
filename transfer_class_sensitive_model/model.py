@@ -30,6 +30,8 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 def fn(item):
     kvar = K.constant(value=np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                       dtype='float32')
+
+
 def mmd(x):
     """
     maximum mean discrepancy (MMD) based on Gaussian kernel
@@ -72,8 +74,14 @@ def mmd(x):
     # for i in range(x[2].shape[0]):
     #     r = tf.cond(K.all(K.equal(x[2][i], kvar)), lambda: K.expand_dims(x[2][i], axis=0), lambda: K.expand_dims(K.zeros_like(x[2][i]), axis=0))
     #     train_tensor.append(r)
-    train_tensor = tf.map_fn(lambda cur_x: tf.cond(K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(cur_x, axis=0), lambda: K.expand_dims(K.zeros_like(cur_x), axis=0)), x[2])
-    test_tensor = tf.map_fn(lambda cur_x: tf.cond(K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(cur_x, axis=0), lambda: K.expand_dims(K.zeros_like(cur_x), axis=0)), x[3])
+    train_tensor = tf.map_fn(
+        lambda cur_x: tf.cond(
+            K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(cur_x, axis=0),
+            lambda: K.expand_dims(K.zeros_like(cur_x), axis=0)), x[2])
+    test_tensor = tf.map_fn(
+        lambda cur_x: tf.cond(
+            K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(cur_x, axis=0),
+            lambda: K.expand_dims(K.zeros_like(cur_x), axis=0)), x[3])
 
     # for item in x[2]:
     #     r = tf.cond(K.all(K.equal(item, kvar)), lambda: K.expand_dims(item, axis=0), lambda: K.expand_dims(K.zeros_like(item), axis=0))
@@ -100,7 +108,7 @@ def mmd(x):
     x1x2 = gaussian_kernel(train_tensor, test_tensor, beta)
     x2x2 = gaussian_kernel(test_tensor, test_tensor, beta)
     diff = K.mean(x1x1) - 2 * K.mean(x1x2) + K.mean(x2x2)
-    
+
     return diff
 
 
@@ -149,10 +157,11 @@ class TransferClassSensitiveModel():
         input_test = Input(shape=(const.SLIDING_WINDOW_LENGTH, 2),
                            name='input_test')
 
-        input_train_label = Input(shape=(10,), name='input_train_label')
-        input_test_label = Input(shape=(10,), name='input_test_label')
+        input_train_label = Input(shape=(10, ), name='input_train_label')
+        input_test_label = Input(shape=(10, ), name='input_test_label')
 
-        input_train_label_print = K.print_tensor(input_train_label, message="input_train_label is: ")
+        input_train_label_print = K.print_tensor(
+            input_train_label, message="input_train_label is: ")
 
         conv_1_shared = Conv1D(10,
                                3,
@@ -253,8 +262,6 @@ class TransferClassSensitiveModel():
         input_train_label = Input(shape=(10, ), name='input_train_label')
         input_test_label = Input(shape=(10, ), name='input_test_label')
 
-        input_train_label_print = K.print_tensor(input_train_label, message="input_train_label is: ")
-
         conv_1_shared = Conv1D(10,
                                3,
                                strides=1,
@@ -274,6 +281,9 @@ class TransferClassSensitiveModel():
         lstm_1_train = lstm_1_shared(conv_1_train_dropout)
         lstm_1_test = lstm_1_shared(conv_1_test_dropout)
 
+        def mmd(item):
+            return K.mean(item[0])
+
         mmd_compute = Lambda(lambda x: mmd(x), name='mmd_compute')(
             [lstm_1_train, lstm_1_test, input_train_label, input_test_label])
 
@@ -287,7 +297,6 @@ class TransferClassSensitiveModel():
     def _get_predict_result_and_middle_feature(self):
         logger.info("Predict result on train and test dataset and saved...")
 
-        self.train_feature = self.train_feature[:100]
         print(self.train_feature.shape)
 
         train_predict_result = self.model.predict([
@@ -296,13 +305,10 @@ class TransferClassSensitiveModel():
         ])
 
         print("train has been predicted ...")
-
-        # self.test_feature = self.test_feature[:100]
+        print(self.test_feature.shape, self.test_feature_for_transfer.shape, self.test_label.shape, self.test_label_for_transfer.shape)
         test_predict_result = self.model.predict([
-            self.test_feature,
-            np.zeros((self.test_feature.shape[0], self.test_feature.shape[1],
-                      self.train_feature.shape[2])),
-            self.train_label, self.test_label_for_transfer
+            self.test_feature, self.test_feature,
+            self.test_label, self.test_label
         ])
 
         print("test has been predicted ...")
@@ -347,17 +353,22 @@ class TransferClassSensitiveModel():
               self.model.layers[3].input, self.model.layers[-2].output)
 
         logger.info("Get middle feature output from cnn/lstm/dense...")
-        get_layer_output = K.function(
-            [self.model.layers[0].input, self.model.layers[3].input, self.model.layers[8].input, self.model.layers[9].input], [
-                self.model.layers[4].get_output_at(0),
-                self.model.layers[-1].get_output_at(0)
-            ])
+        get_layer_output = K.function([
+            self.model.layers[0].input, self.model.layers[3].input,
+            self.model.layers[8].input, self.model.layers[9].input
+        ], [
+            self.model.layers[4].get_output_at(0),
+            self.model.layers[-1].get_output_at(0)
+        ])
 
-        train_layer_output = get_layer_output(
-            [self.train_feature, self.test_feature_for_transfer,
-                self.train_label, self.test_label_for_transfer])
-        test_layer_output = get_layer_output(
-            [self.test_feature, self.test_feature, self.train_label, self.test_label_for_transfer])
+        train_layer_output = get_layer_output([
+            self.train_feature, self.test_feature_for_transfer,
+            self.train_label, self.test_label_for_transfer
+        ])
+        test_layer_output = get_layer_output([
+            self.test_feature, self.test_feature_for_transfer, self.test_label,
+            self.test_label_for_transfer
+        ])
 
         # lstm fature
         np.save(self.dic_path + "/train_lstm_feature.npy",

@@ -1,5 +1,6 @@
 Amount_sensitive_model/saved_model/
 Cnn_lstm_model/saved_model/
 Transfer_model/saved_model/
-Transfer_class_sensitive_model/saved_model/
+transfer_class_sensitive_model/saved_model/
+Transfer_class_sensitive_model/nohup.out
 dataset/

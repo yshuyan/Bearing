@@ -16,9 +16,9 @@ parent_path = os.path.dirname(sys.path[0])
 if parent_path not in sys.path:
     sys.path.append(parent_path)
 
-from constants import const
-from plot_lstm_feature import plot
-from transfer_class_sensitive_model.handle_result import \
+from bearing.constants import const
+from bearing.plot_lstm_feature import plot
+from bearing.transfer_class_sensitive_model.handle_result import \
     generate_metrics
 
 for handler in logging.root.handlers[:]:
@@ -305,10 +305,11 @@ class TransferClassSensitiveModel():
         ])
 
         print("train has been predicted ...")
-        print(self.test_feature.shape, self.test_feature_for_transfer.shape, self.test_label.shape, self.test_label_for_transfer.shape)
+        print(self.test_feature.shape, self.test_feature_for_transfer.shape,
+              self.test_label.shape, self.test_label_for_transfer.shape)
         test_predict_result = self.model.predict([
-            self.test_feature, self.test_feature,
-            self.test_label, self.test_label
+            self.test_feature, self.test_feature, self.test_label,
+            self.test_label
         ])
 
         print("test has been predicted ...")

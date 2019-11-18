@@ -10,13 +10,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import class_weight
 from sklearn import preprocessing
 
-parent_path = os.path.dirname(sys.path[0])
-if parent_path not in sys.path:
-    sys.path.append(parent_path)
+# parent_path = os.path.dirname(sys.path[0])
+# if parent_path not in sys.path:
+#     sys.path.append(parent_path)
 
-from constants import const
-from transfer_class_sensitive_model.model import TransferClassSensitiveModel
-from transfer_class_sensitive_model.tools import mkdir
+from bearing.constants import const
+from bearing.transfer_class_sensitive_model.model import TransferClassSensitiveModel
+from bearing.transfer_class_sensitive_model.tools import mkdir
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -25,6 +25,8 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 
 
 def main():
+    module_path = os.path.dirname(os.path.abspath(__file__))
+    pre_module_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     params = {
         "train_motor": 1,
         "test_motor":
@@ -38,7 +40,7 @@ def main():
         # "model_dic_path": "saved_model/2019_09_04_19_57_17_cnn_lstm_sliding_20_motor_train_3_test_3",
         # "model_dic_path": "saved_model/2019_09_04_19_34_08_cnn_lstm_sliding_20_motor_train_2_test_2",
         "model_dic_path":
-        "saved_model/2019_11_18_16_59_02_cnn_lstm_sliding_20_motor_train_0_test_3",
+        "{}/saved_model/2019_11_18_16_59_02_cnn_lstm_sliding_20_motor_train_0_test_3".format(module_path),
         # "saved_model/2019_09_27_14_40_48_cnn_lstm_sliding_20_motor_train_0_test_3",
     }
     model_params = {
@@ -52,7 +54,7 @@ def main():
 
     if params["train_flag"]:
         # mkdir
-        dic_path = "saved_model/{}_cnn_lstm_sliding_{}_motor_train_{}_test_{}".format(
+        dic_path = "{}/saved_model/{}_cnn_lstm_sliding_{}_motor_train_{}_test_{}".format(module_path,
             time.strftime("%Y_%m_%d_%H_%M_%S",
                           time.localtime()), const.SLIDING_WINDOW_LENGTH,
             params["train_motor"], params["test_motor"])
@@ -72,21 +74,21 @@ def main():
     # load data
     logger.info("Loading feature and label...")
     train_feature = np.load(
-        "../dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
-        format(params["train_motor"], const.SLIDING_WINDOW_LENGTH))
+        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
+        format(pre_module_path, params["train_motor"], const.SLIDING_WINDOW_LENGTH))
     train_label = np.load(
-        "../dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
-        format(params["train_motor"], const.SLIDING_WINDOW_LENGTH))
+        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
+        format(pre_module_path, params["train_motor"], const.SLIDING_WINDOW_LENGTH))
 
     train_feature, test_feature, train_label, test_label = train_test_split(
         train_feature, train_label, test_size=0.2, random_state=0)
 
     test_feature = np.load(
-        "../dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
-        format(params["test_motor"], const.SLIDING_WINDOW_LENGTH))
+        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
+        format(pre_module_path, params["test_motor"], const.SLIDING_WINDOW_LENGTH))
     test_label = np.load(
-        "../dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
-        format(params["test_motor"], const.SLIDING_WINDOW_LENGTH))
+        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
+        format(pre_module_path, params["test_motor"], const.SLIDING_WINDOW_LENGTH))
 
     logger.info("train feature shape : {} train label shape : {}".format(
         train_feature.shape, train_label.shape))

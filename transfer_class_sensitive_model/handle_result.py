@@ -10,7 +10,7 @@ from sklearn import metrics
 #path = "saved_model/2019_09_04_17_03_48_cnn_lstm_sliding_20_motor_train_1_test_1"
 # path = "saved_model/2019_09_06_10_22_02_cnn_lstm_sliding_20_motor_train_0_test_0"
 
-def generate_metrics(path, ifTrain=False):
+def generate_metrics(path, ifTrain=True):
         pre = 'test' if ifTrain else 'train'
         average_list = ['micro', 'macro', 'weighted', None]
         target_names = ['', 'class_0', 'class_1', 'class_2', 'class_3', 'class_4', 'class_5', 'class_6', 'class_7', 'class_8', 'class_9']

@@ -41,6 +41,11 @@ for handler in logging.root.handlers[:]:
 logger = logging.getLogger(__name__)
 tf.logging.set_verbosity(tf.logging.ERROR)
 
+import argparse
+parser = argparse.ArgumentParser(description='manual to this script')
+parser.add_argument('--train-motor', type=str, default = '0')
+parser.add_argument('--model-dic-path', type=str, default = None)
+args = parser.parse_args()
 
 def mmd(x):
     """
@@ -406,7 +411,7 @@ class Transfer_model():
 def main():
     params = {
         "train_motor":
-        0,
+        args.train_motor,
         "test_motor":
         3,
         "train_flag":
@@ -418,7 +423,8 @@ def main():
         # "model_dic_path": "saved_model/2019_09_04_19_57_17_cnn_lstm_sliding_20_motor_train_3_test_3",
         # "model_dic_path": "saved_model/2019_09_04_19_34_08_cnn_lstm_sliding_20_motor_train_2_test_2",
         "model_dic_path":
-        "saved_model/2019_09_27_14_40_48_cnn_lstm_sliding_20_motor_train_0_test_3",
+        args.model_dic_path,
+        # "saved_model/2019_09_27_14_40_48_cnn_lstm_sliding_20_motor_train_0_test_3",
         # "saved_model/2019_09_27_14_40_48_cnn_lstm_sliding_20_motor_train_0_test_3",
         "number_for_each_class":
         [[300000, 8000, 40000, 30000, 50000, 30000, 20000, 10000, 2000, 10000],
@@ -466,8 +472,8 @@ def main():
         "../dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
         format(params["train_motor"], const.SLIDING_WINDOW_LENGTH))
 
-    train_feature, test_feature, train_label, test_label = train_test_split(
-        train_feature, train_label, test_size=0.2, random_state=0)
+    # train_feature, test_feature, train_label, test_label = train_test_split(
+    #     train_feature, train_label, test_size=0.2, random_state=0)
 
     test_feature = np.load(
         "../dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".

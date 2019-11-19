@@ -12,9 +12,9 @@ from keras.callbacks import EarlyStopping
 from keras.layers import LSTM, Conv1D, Dense, Dropout, Flatten, Input, Lambda
 from keras.models import Model, load_model
 
-parent_path = os.path.dirname(sys.path[0])
-if parent_path not in sys.path:
-    sys.path.append(parent_path)
+# parent_path = os.path.dirname(sys.path[0])
+# if parent_path not in sys.path:
+#     sys.path.append(parent_path)
 
 from bearing.constants import const
 from bearing.plot_lstm_feature import plot

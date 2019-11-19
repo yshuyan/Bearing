@@ -38,6 +38,12 @@ for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
 logger = logging.getLogger(__name__)
 tf.logging.set_verbosity(tf.logging.ERROR)
+import argparse
+parser = argparse.ArgumentParser(description='manual to this script')
+parser.add_argument('--train-motor', type=str, default = '0')
+parser.add_argument('--model-dic-path', type=str, default = None)
+args = parser.parse_args()
+
 
 
 def mmd(x):
@@ -280,7 +286,7 @@ class Amount_sensitive_model():
         self._load_exist_model()
         self._get_predict_result_and_middle_feature()
         handle_result.generate_metrics(self.dic_path)
-        plot_lstm_feature.plot(self.dic_path, self.train_motor, self.test_motor)
+        # plot_lstm_feature.plot(self.dic_path, self.train_motor, self.test_motor)
 
     def get_model(self):
         return self.model
@@ -288,7 +294,7 @@ class Amount_sensitive_model():
 
 def main():
     params = {
-        "train_motor": 0,
+        "train_motor": args.train_motor,
         "test_motor": 3,
 
         "train_flag": False,
@@ -299,7 +305,8 @@ def main():
         # "model_dic_path": "saved_model/2019_09_04_22_09_31_cnn_lstm_sliding_20_motor_train_3_test_3"  
         # "model_dic_path": "saved_model/2019_09_04_20_49_52_cnn_lstm_sliding_20_motor_train_1_test_1" 
         # "model_dic_path": "saved_model/2019_09_04_21_07_13_cnn_lstm_sliding_20_motor_train_2_test_2" 
-        "model_dic_path": "saved_model/2019_07_18_16_35_08_cnn_lstm_sliding_20_motor_train_0_test_3"                                                                                                                                                                                                                                          
+        # "model_dic_path": "saved_model/2019_07_18_16_46_38_cnn_lstm_sliding_20_motor_train_1_test_3"    
+        "model_dic_path": args.model_dic_path                                                                                                                                                                                                                                      
     }
     model_params = {
         "batch_size": 512,
@@ -345,8 +352,8 @@ def main():
         "../dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
         format(params["test_motor"], const.SLIDING_WINDOW_LENGTH))
     
-    train_feature, test_feature, train_label, test_label = train_test_split(
-        train_feature, train_label, test_size=0.2, random_state=0)
+    # train_feature, test_feature, train_label, test_label = train_test_split(
+    #     train_feature, train_label, test_size=0.2, random_state=0)
 
     logger.info("train feature shape : {} train label shape : {}".format(
         train_feature.shape, train_label.shape))

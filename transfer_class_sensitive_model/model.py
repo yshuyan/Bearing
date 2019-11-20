@@ -337,10 +337,12 @@ class TransferClassSensitiveModel():
             callbacks=[early_stopping])
 
         self._save_model()
+        self._load_exist_model()
         # self._save_figure(self.show_eval_figure)
         # self._model_evaluate()
         self._get_predict_result_and_middle_feature()
         generate_metrics(self.dic_path)
+        plot(self.dic_path, self.args.train_motor, self.args.test_motor)
 
     def predict_with_exist_model(self):
         self._load_exist_model()

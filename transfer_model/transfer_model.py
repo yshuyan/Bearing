@@ -1,3 +1,4 @@
+import argparse
 import gc
 import json
 import logging
@@ -30,10 +31,14 @@ for handler in logging.root.handlers[:]:
 logger = logging.getLogger(__name__)
 tf.logging.set_verbosity(tf.logging.ERROR)
 
-import argparse
 parser = argparse.ArgumentParser(description='manual to this script')
 parser.add_argument('--train-motor', type=str, default='0')
-parser.add_argument('--train-flag', type=str, default='True')
+
+flag_parser = parser.add_mutually_exclusive_group(required=False)
+flag_parser.add_argument('--flag', dest='flag', action='store_true')
+flag_parser.add_argument('--no-flag', dest='flag', action='store_false')
+parser.set_defaults(flag=True)
+
 parser.add_argument('--model-dic-path', type=str, default=None)
 args = parser.parse_args()
 
@@ -384,6 +389,7 @@ class Transfer_model():
         #                 history_logger["val_loss"][i],
         #                 history_logger["val_acc"][i]))
         self._save_model()
+        self._load_exist_model()
         # self._save_figure(self.show_eval_figure)
         # self._model_evaluate()
         self._get_predict_result_and_middle_feature()
@@ -407,25 +413,9 @@ def main():
         "test_motor":
         3,
         "train_flag":
-        args.train_flag,
-        # "model_dic_path": "saved_model/2019_07_20_16_27_14_cnn_lstm_sliding_20_motor_train_2_test_3",
-        # model_path = "saved_model/2019_07_20_15_28_33_cnn_lstm_sliding_20_motor_train_0_test_3/model.h5"
-        # model_path = "saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3/model.h5"
-        # "model_dic_path": "saved_model/2019_09_04_20_12_55_cnn_lstm_sliding_20_motor_train_0_test_0",
-        # "model_dic_path": "saved_model/2019_09_04_19_57_17_cnn_lstm_sliding_20_motor_train_3_test_3",
-        # "model_dic_path": "saved_model/2019_09_04_19_34_08_cnn_lstm_sliding_20_motor_train_2_test_2",
+        args.flag,
         "model_dic_path":
-        args.model_dic_path,
-        # "saved_model/2019_09_27_14_40_48_cnn_lstm_sliding_20_motor_train_0_test_3",
-        # "saved_model/2019_09_27_14_40_48_cnn_lstm_sliding_20_motor_train_0_test_3",
-        "number_for_each_class":
-        [[300000, 8000, 40000, 30000, 50000, 30000, 20000, 10000, 2000, 10000],
-         [
-             300000, 12000, 20000, 26000, 45000, 30000, 10000, 30000, 7000,
-             20000
-         ],
-         [300000, 20000, 30000, 30000, 60000, 25000, 8000, 15000, 10000, 2000],
-         [300000, 8000, 40000, 30000, 50000, 30000, 20000, 10000, 2000, 10000]]
+        args.model_dic_path
     }
     model_params = {
         "batch_size": 512,
@@ -532,7 +522,9 @@ def main():
         test_feature, test_label_encoder, one_hot_encoder, model_params,
         list(class_weights), dic_path, params['train_motor'],
         params['test_motor'])
+
     if params["train_flag"]:
+        print('why???????')
         cur_model.train_model()
     else:
         cur_model.predict_with_exist_model()

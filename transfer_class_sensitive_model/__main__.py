@@ -26,7 +26,12 @@ def parse_args():
             module based on the number of classed')
     parser.add_argument('--train-motor', type=str, default='0')
     parser.add_argument('--test-motor', type=str, default='3')
-    parser.add_argument('--train-flag', type=str, default='True')
+
+    flag_parser = parser.add_mutually_exclusive_group(required=False)
+    flag_parser.add_argument('--flag', dest='flag', action='store_true')
+    flag_parser.add_argument('--no-flag', dest='flag', action='store_false')
+    parser.set_defaults(flag=True)
+
     parser.add_argument('--model-dic-path', type=str, default=None)
 
     parser.add_argument('--batch-size', type=int, default=512)
@@ -43,7 +48,7 @@ def main(args):
     pre_module_path = os.path.dirname(
         os.path.dirname(os.path.abspath(__file__)))
 
-    if args.train_flag:
+    if args.flag:
         # mkdir
         dic_path = "{}/saved_model/{}_transfer_class_sensitive_model_{}_motor_train_{}_test_{}".format(
             module_path, time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()),
@@ -145,7 +150,7 @@ def main(args):
     }
     cur_model = TransferClassSensitiveModel(data_dic, one_hot_encoder, args,
                                             list(class_weights), dic_path)
-    if args.train_flag:
+    if args.flag:
         cur_model.train_model()
     else:
         cur_model.predict_with_exist_model()

@@ -1,21 +1,17 @@
+import argparse
 import json
 import logging
 import os
 import time
-import sys
 
 import numpy as np
 import tensorflow as tf
+from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.utils import class_weight
-from sklearn import preprocessing
 
-# parent_path = os.path.dirname(sys.path[0])
-# if parent_path not in sys.path:
-#     sys.path.append(parent_path)
-
-from bearing.constants import const
-from bearing.transfer_class_sensitive_model.model import TransferClassSensitiveModel
+from bearing.transfer_class_sensitive_model.model import \
+    TransferClassSensitiveModel
 from bearing.transfer_class_sensitive_model.tools import mkdir
 
 for handler in logging.root.handlers[:]:
@@ -24,40 +20,38 @@ logger = logging.getLogger(__name__)
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 
-def main():
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Transfer & imbalance model and modify the mmd compute \
+            module based on the number of classed')
+    parser.add_argument('--train-motor', type=str, default='0')
+    parser.add_argument('--test-motor', type=str, default='3')
+    parser.add_argument('--train-flag', type=str, default='True')
+    parser.add_argument('--model-dic-path', type=str, default=None)
+
+    parser.add_argument('--batch-size', type=int, default=512)
+    parser.add_argument('--hidden-size', type=int, default=512)
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--early-stopping-patience', type=int, default=10)
+    parser.add_argument('--sliding-window-length', type=int, default=20)
+
+    return parser.parse_args()
+
+
+def main(args):
     module_path = os.path.dirname(os.path.abspath(__file__))
     pre_module_path = os.path.dirname(
         os.path.dirname(os.path.abspath(__file__)))
-    params = {
-        "train_motor":
-        0,
-        "test_motor":
-        3,
-        "train_flag":
-        False,
-        "model_dic_path":
-        "{}/saved_model/2019_11_19_18_05_46_cnn_lstm_sliding_20_motor_train_0_test_3"
-        .format(module_path),
-    }
-    model_params = {
-        "batch_size": 512,
-        "hidden_size": 32,
-        "epochs": 100,
-        "verbose": 1,
-        "shuffle": True,
-        "early_stopping_patience": 5,
-    }
 
-    if params["train_flag"]:
+    if args.train_flag:
         # mkdir
         dic_path = "{}/saved_model/{}_cnn_lstm_sliding_{}_motor_train_{}_test_{}".format(
             module_path, time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()),
-            const.SLIDING_WINDOW_LENGTH, params["train_motor"],
-            params["test_motor"])
+            args.sliding_window_length, args.train_motor, args.test_motor)
         mkdir(dic_path)
         logger.info("mkdir : " + dic_path)
     else:
-        dic_path = params["model_dic_path"]
+        dic_path = args.model_dic_path
         logger.info("exit model dir : " + dic_path)
 
     logging.basicConfig(
@@ -71,22 +65,17 @@ def main():
     logger.info("Loading feature and label...")
     train_feature = np.load(
         "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
-        format(pre_module_path, params["train_motor"],
-               const.SLIDING_WINDOW_LENGTH))
+        format(pre_module_path, args.train_motor, args.sliding_window_length))
     train_label = np.load(
         "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
-        format(pre_module_path, params["train_motor"],
-               const.SLIDING_WINDOW_LENGTH))
-
+        format(pre_module_path, args.train_motor, args.sliding_window_length))
 
     test_feature = np.load(
         "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
-        format(pre_module_path, params["test_motor"],
-               const.SLIDING_WINDOW_LENGTH))
+        format(pre_module_path, args.test_motor, args.sliding_window_length))
     test_label = np.load(
         "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
-        format(pre_module_path, params["test_motor"],
-               const.SLIDING_WINDOW_LENGTH))
+        format(pre_module_path, args.test_motor, args.sliding_window_length))
     # test_label = np.load(
     #     "{}/Cnn_lstm_model/saved_model/2019_07_18_16_35_08_cnn_lstm_sliding_20_motor_train_0_test_3/test_predict_result_inverse.npy".format(pre_module_path)
     # )
@@ -126,7 +115,7 @@ def main():
                                                       np.unique(y_integers),
                                                       y_integers)
     class_weights_dic = dict(enumerate(class_weights))
-    model_params.update({"class_weights": class_weights_dic})
+    # model_params.update({"class_weights": class_weights_dic})
     logger.info("class weight : {}".format(class_weights_dic))
 
     # Split train/valid/test
@@ -141,24 +130,32 @@ def main():
         .format(validation_feature_split.shape, validation_split_label.shape))
 
     logger.info("Train/Load model and predict...")
-    cur_model = TransferClassSensitiveModel(
-        train_feature_split, train_split_label, validation_feature_split,
-        validation_split_label, test_feature[:len(train_feature_split)],
-        test_label_encoder[:len(train_split_label)], validation_feature_split,
-        validation_split_label,
-        test_feature, test_label_encoder, one_hot_encoder, model_params,
-        list(class_weights), dic_path, params['train_motor'],
-        params['test_motor'])
-    if params["train_flag"]:
+
+    data_dic = {
+        'train_feature': train_feature_split,
+        'train_label': train_split_label,
+        'validation_feature': validation_feature_split,
+        'validation_label': validation_split_label,
+        'test_feature_for_transfer': test_feature[:len(train_feature_split)],
+        'test_label_for_transfer': test_label_encoder[:len(train_split_label)],
+        'validation_feature_for_transfer': validation_feature_split,
+        'validation_label_for_transfer': validation_split_label,
+        'test_feature': test_feature,
+        'test_label': test_label_encoder
+    }
+    cur_model = TransferClassSensitiveModel(data_dic, one_hot_encoder, args,
+                                            list(class_weights), dic_path)
+    if args.train_flag:
         cur_model.train_model()
     else:
         cur_model.predict_with_exist_model()
 
     # save params
-    saved_params = {"params": params, "model_params": model_params}
+    saved_params = {"params": args}
     with open(dic_path + '/saved_params.json', 'w') as fp:
         json.dump(saved_params, fp)
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    main(args)

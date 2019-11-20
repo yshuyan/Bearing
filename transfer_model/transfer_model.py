@@ -5,24 +5,13 @@ import os
 import sys
 import time
 
-import lightgbm as lgb
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sns
 from keras import backend as K
 from keras.callbacks import EarlyStopping
-from keras.layers import (LSTM, BatchNormalization, Conv1D, Dense, Dropout,
-                          Flatten, Input, Lambda, concatenate)
-from keras.metrics import categorical_accuracy
-from keras.models import Model, Sequential, load_model
-from keras.preprocessing import sequence
-from keras.regularizers import Regularizer
-from keras.utils import plot_model
-from keras.wrappers.scikit_learn import KerasRegressor
-from scipy.signal import savgol_filter
+from keras.layers import (LSTM, Conv1D, Dense, Dropout, Flatten, Lambda, Input)
+from keras.models import Model, load_model
 from sklearn import preprocessing
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.utils import class_weight
 import tensorflow as tf
@@ -43,10 +32,11 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 
 import argparse
 parser = argparse.ArgumentParser(description='manual to this script')
-parser.add_argument('--train-motor', type=str, default = '0')
-parser.add_argument('--train-flag', type=str, default = 'True')
-parser.add_argument('--model-dic-path', type=str, default = None)
+parser.add_argument('--train-motor', type=str, default='0')
+parser.add_argument('--train-flag', type=str, default='True')
+parser.add_argument('--model-dic-path', type=str, default=None)
 args = parser.parse_args()
+
 
 def mmd(x):
     """
@@ -73,9 +63,10 @@ def gaussian_kernel(x1, x2, beta=1.0):
 def get_mmd_loss(y_true, y_pred):
     return y_pred
 
+
 def auc(y_true, y_pred):
     auc = tf.metrics.auc(y_true, y_pred)[1]
-    # K.get_session().run(tf.local_variables_initializer())
+    K.get_session().run(tf.local_variables_initializer())
     return auc
 
 
@@ -150,7 +141,7 @@ class Transfer_model():
                              name='mmd_compute')([lstm_1_train, lstm_1_test])
 
         lstm_1_train_dropout = Dropout(0.3)(lstm_1_train)
-        lstm_1_test_dropout = Dropout(0.3)(lstm_1_test)
+        # lstm_1_test_dropout = Dropout(0.3)(lstm_1_test)
 
         flatten = Flatten()(lstm_1_train_dropout)
         output = Dense(10, activation='softmax')(flatten)
@@ -159,11 +150,11 @@ class Transfer_model():
                            outputs=[output, mmd_compute])
 
         self.model.compile(loss=['categorical_crossentropy', get_mmd_loss],
-                           loss_weights=[1., 10000],
+                           loss_weights=[1., 100],
                            optimizer='rmsprop',
                            metrics={
                                'output_a': 'accuracy',
-                               'output_b': None
+                               'output_b': auc
                            })
         return self.model
 
@@ -277,8 +268,7 @@ class Transfer_model():
 
         print("test has been predicted ...")
 
-        np.save(self.dic_path + "/train_label_encoder.npy",
-                self.train_label)
+        np.save(self.dic_path + "/train_label_encoder.npy", self.train_label)
 
         np.save(self.dic_path + "/train_predict_result.npy",
                 train_predict_result[0])
@@ -291,7 +281,6 @@ class Transfer_model():
             train_predict_result[0])
         test_predict_result_inverse = self.one_hot_encoder.inverse_transform(
             test_predict_result[0])
-
 
         train_predict_result_inverse = np.reshape(
             train_predict_result_inverse,
@@ -308,15 +297,12 @@ class Transfer_model():
         del train_predict_result_inverse, test_predict_result_inverse
         gc.collect()
 
-
         train_label_inverse = self.one_hot_encoder.inverse_transform(
             self.train_label)
-        train_label_inverse = np.reshape(
-            train_label_inverse,
-            (train_label_inverse.shape[0]))
-        np.save(self.dic_path + "/train_label.npy",
-                train_label_inverse)
-                
+        train_label_inverse = np.reshape(train_label_inverse,
+                                         (train_label_inverse.shape[0]))
+        np.save(self.dic_path + "/train_label.npy", train_label_inverse)
+
         # logger.info("Get softmax layer output...")
         print(self.model.layers, self.model.layers[0].input,
               self.model.layers[3].input, self.model.layers[-2].output)
@@ -421,7 +407,7 @@ def main():
         "test_motor":
         3,
         "train_flag":
-        False,
+        args.train_flag,
         # "model_dic_path": "saved_model/2019_07_20_16_27_14_cnn_lstm_sliding_20_motor_train_2_test_3",
         # model_path = "saved_model/2019_07_20_15_28_33_cnn_lstm_sliding_20_motor_train_0_test_3/model.h5"
         # model_path = "saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3/model.h5"
@@ -444,10 +430,10 @@ def main():
     model_params = {
         "batch_size": 512,
         "hidden_size": 32,
-        "epochs": 100,
+        "epochs": 70,
         "verbose": 1,
         "shuffle": True,
-        "early_stopping_patience": 5,
+        "early_stopping_patience": 20,
     }
 
     if params["train_flag"]:

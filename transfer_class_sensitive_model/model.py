@@ -1,7 +1,5 @@
 import gc
 import logging
-import os
-import sys
 
 import keras.losses
 import matplotlib.pyplot as plt
@@ -12,11 +10,6 @@ from keras.callbacks import EarlyStopping
 from keras.layers import LSTM, Conv1D, Dense, Dropout, Flatten, Input, Lambda
 from keras.models import Model, load_model
 
-# parent_path = os.path.dirname(sys.path[0])
-# if parent_path not in sys.path:
-#     sys.path.append(parent_path)
-
-from bearing.constants import const
 from bearing.plot_lstm_feature import plot
 from bearing.transfer_class_sensitive_model.handle_result import \
     generate_metrics
@@ -27,11 +20,6 @@ logger = logging.getLogger(__name__)
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 
-def fn(item):
-    kvar = K.constant(value=np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                      dtype='float32')
-
-
 def mmd(x):
     """
     maximum mean discrepancy (MMD) based on Gaussian kernel
@@ -39,41 +27,9 @@ def mmd(x):
     - Gretton, Arthur, et al. "A kernel method for the two-sample-problem."
     Advances in neural information processing systems. 2007.
     """
-    # with sess.as_default():
-    # print(K.eval(K.argmax(x[3][0])))
-    # print(x[3][0][0])
-
-    # result = sess.run(K.argmax(x[3][0]))
-    # print('result : ', result)
-    # print_output = K.print_tensor(K.argmax(x[3][0]))
-    # sess = tf.InteractiveSession()
-    # print("node1: ", K.argmax(x[3][0]).eval())
-
     kvar = K.constant(value=np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                       dtype='float32')
-    # diff = K.any(K.equal(x[3][0], kvar))
-    # diff = tf.Print(diff, [diff])
-    # return K.mean(diff)
-    # print('if equal : ', kvar == x[3][0])
-    # print(kvar)
-    # if K.equal(x[3][0], kvar) is not None:
-    #     print('dddd')
-    # return K.zeros((1))
-    # if cur_train_label.shape[0] > 10000:
-    #     return K.zeros((1))
 
-    # train_tensor = []
-    # print(x[2].shape)
-    # print(np.all(K.equal(x[2][0], kvar)))
-    # diff = K.all(K.equal(x[2][0], kvar), axis=0)
-    # # diff = x[2][0]
-    # diff = tf.Print(diff, [diff, diff.shape])
-    # return K.mean(diff)
-    # result = tf.cond(x < y, lambda: tf.add(x, z), lambda: tf.square(y))
-
-    # for i in range(x[2].shape[0]):
-    #     r = tf.cond(K.all(K.equal(x[2][i], kvar)), lambda: K.expand_dims(x[2][i], axis=0), lambda: K.expand_dims(K.zeros_like(x[2][i]), axis=0))
-    #     train_tensor.append(r)
     train_tensor = tf.map_fn(
         lambda cur_x: tf.cond(
             K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(cur_x, axis=0),
@@ -83,26 +39,6 @@ def mmd(x):
             K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(cur_x, axis=0),
             lambda: K.expand_dims(K.zeros_like(cur_x), axis=0)), x[3])
 
-    # for item in x[2]:
-    #     r = tf.cond(K.all(K.equal(item, kvar)), lambda: K.expand_dims(item, axis=0), lambda: K.expand_dims(K.zeros_like(item), axis=0))
-    #     train_tensor.append(r)
-    # print(train_tensor)
-
-    # test_tensor = []
-    # for i in range(x[3].shape[0]):
-    #     r = tf.cond(K.all(K.equal(x[3][i], kvar)), lambda: K.expand_dims(x[3][i], axis=0), lambda: K.expand_dims(K.zeros_like(x[3][i]), axis=0))
-    #     test_tensor.append(r)
-
-    # tensor_length = min(len(train_tensor), len(test_tensor))
-    # print('tensor_length : ', len(train_tensor))
-    # return K.mean(kvar)
-    # if tensor_length == 0:
-    #     return K.zeros((1))
-
-    # train_tensor = K.concatenate(train_tensor, axis=0)
-    # test_tensor = K.concatenate(test_tensor, axis=0)
-    # print(train_tensor)
-    # # print(x[0])
     beta = 1.0
     x1x1 = gaussian_kernel(train_tensor, train_tensor, beta)
     x1x2 = gaussian_kernel(train_tensor, test_tensor, beta)
@@ -124,44 +60,26 @@ def get_mmd_loss(y_true, y_pred):
 
 
 class TransferClassSensitiveModel():
-    def __init__(self, train_feature, train_label, validation_feature,
-                 validation_label, test_feature_for_transfer,
-                 test_label_for_transfer, validation_feature_for_transfer,
-                 validation_label_for_transfer, test_feature, test_label,
-                 one_hot_encoder, model_params, class_weights, dic_path,
-                 train_motor, test_motor):
-        self.train_feature = train_feature
-        self.train_label = train_label
-        self.validation_feature = validation_feature
-        self.validation_label = validation_label
-        self.test_feature_for_transfer = test_feature_for_transfer
-        self.test_label_for_transfer = test_label_for_transfer
-        self.validation_feature_for_transfer = validation_feature_for_transfer
-        self.validation_label_for_transfer = validation_label_for_transfer
-        self.test_feature = test_feature
-        self.test_label = test_label
+    def __init__(self, args, data_dic, one_hot_encoder, class_weights,
+                 dic_path):
+        self.args = args
+        self.data_dic = data_dic
         self.one_hot_encoder = one_hot_encoder
-        self.model_params = model_params
         self.class_weights = class_weights
         self.dic_path = dic_path
-        self.train_motor = train_motor
-        self.test_motor = test_motor
 
         self.show_eval_figure = False
         self.model = None
         self.history = None
 
     def _model(self):
-        input_train = Input(shape=(const.SLIDING_WINDOW_LENGTH, 2),
+        input_train = Input(shape=(self.args.sliding_window_length, 2),
                             name='input_train')
-        input_test = Input(shape=(const.SLIDING_WINDOW_LENGTH, 2),
+        input_test = Input(shape=(self.args.sliding_window_length, 2),
                            name='input_test')
 
         input_train_label = Input(shape=(10, ), name='input_train_label')
         input_test_label = Input(shape=(10, ), name='input_test_label')
-
-        input_train_label_print = K.print_tensor(
-            input_train_label, message="input_train_label is: ")
 
         conv_1_shared = Conv1D(10,
                                3,
@@ -175,7 +93,7 @@ class TransferClassSensitiveModel():
         conv_1_train_dropout = Dropout(0.3)(conv_1_train)
         conv_1_test_dropout = Dropout(0.3)(conv_1_test)
 
-        lstm_1_shared = LSTM(self.model_params["hidden_size"],
+        lstm_1_shared = LSTM(self.args.hidden_size,
                              return_sequences=True,
                              activation='tanh')
 
@@ -236,10 +154,13 @@ class TransferClassSensitiveModel():
             plt.show()
 
     def _model_evaluate(self):
+        '''
+        to-do
+        '''
         logger.info("Evaluate on test dataset...")
 
         test_loss, _, _, test_accuracy = self.model.evaluate([
-            self.test_feature,
+            self.data_dic['test_feature'],
             np.zeros((self.test_feature.shape[0], self.test_feature.shape[1],
                       self.test_feature.shape[2]))
         ], [
@@ -254,9 +175,9 @@ class TransferClassSensitiveModel():
     def _load_exist_model(self):
         keras.losses.get_mmd_loss = get_mmd_loss
 
-        input_train = Input(shape=(const.SLIDING_WINDOW_LENGTH, 2),
+        input_train = Input(shape=(self.args.sliding_window_length, 2),
                             name='input_train')
-        input_test = Input(shape=(const.SLIDING_WINDOW_LENGTH, 2),
+        input_test = Input(shape=(self.args.sliding_window_length, 2),
                            name='input_test')
 
         input_train_label = Input(shape=(10, ), name='input_train_label')
@@ -274,7 +195,7 @@ class TransferClassSensitiveModel():
         conv_1_train_dropout = Dropout(0.3)(conv_1_train)
         conv_1_test_dropout = Dropout(0.3)(conv_1_test)
 
-        lstm_1_shared = LSTM(self.model_params["hidden_size"],
+        lstm_1_shared = LSTM(self.args.hidden_size,
                              return_sequences=True,
                              activation='tanh')
 
@@ -297,24 +218,24 @@ class TransferClassSensitiveModel():
     def _get_predict_result_and_middle_feature(self):
         logger.info("Predict result on train and test dataset and saved...")
 
-        print(self.train_feature.shape)
+        print(self.data_dic['train_feature'].shape)
 
         train_predict_result = self.model.predict([
-            self.train_feature, self.test_feature_for_transfer,
-            self.train_label, self.test_label_for_transfer
+            self.data_dic['train_feature'], self.data_dic['test_feature_for_transfer'],
+            self.data_dic['train_label'], self.data_dic['test_label_for_transfer']
         ])
 
         print("train has been predicted ...")
-        print(self.test_feature.shape, self.test_feature_for_transfer.shape,
-              self.test_label.shape, self.test_label_for_transfer.shape)
+        print(self.data_dic['test_feature.shape'], self.data_dic['test_feature_for_transfer'].shape,
+              self.data_dic['test_label.shape'], self.data_dic['test_label_for_transfer'].shape)
         test_predict_result = self.model.predict([
-            self.test_feature, self.test_feature, self.test_label,
-            self.test_label
+            self.data_dic['test_feature'], self.data_dic['test_feature'], self.data_dic['test_label'],
+            self.data_dic['test_label']
         ])
 
         print("test has been predicted ...")
 
-        np.save(self.dic_path + "/train_label_encoder.npy", self.train_label)
+        np.save(self.dic_path + "/train_label_encoder.npy", self.data_dic['train_label'])
 
         np.save(self.dic_path + "/train_predict_result.npy",
                 train_predict_result[0])
@@ -363,12 +284,12 @@ class TransferClassSensitiveModel():
         ])
 
         train_layer_output = get_layer_output([
-            self.train_feature, self.test_feature_for_transfer,
-            self.train_label, self.test_label_for_transfer
+            self.data_dic['train_feature'], self.data_dic['test_feature_for_transfer'],
+            self.data_dic['train_label'], self.data_dic['test_label_for_transfer']
         ])
         test_layer_output = get_layer_output([
-            self.test_feature, self.test_feature_for_transfer, self.test_label,
-            self.test_label_for_transfer
+            self.data_dic['test_feature'], self.data_dic['test_feature_for_transfer'], self.data_dic['test_label'],
+            self.data_dic['test_label_for_transfer']
         ])
 
         # lstm fature
@@ -386,23 +307,33 @@ class TransferClassSensitiveModel():
         self._model()
         early_stopping = EarlyStopping(
             monitor="val_loss",
-            patience=self.model_params["early_stopping_patience"],
+            patience=self.args.early_stopping_patience,
             verbose=1)
         self.history = self.model.fit(
             x=[
-                self.train_feature, self.test_feature_for_transfer,
-                self.train_label, self.test_label_for_transfer
+                self.data_dic['train_feature'],
+                self.data_dic['test_feature_for_transfer'],
+                self.data_dic['train_label'],
+                self.data_dic['test_label_for_transfer']
             ],
-            y=[self.train_label, self.test_label_for_transfer],
-            epochs=self.model_params["epochs"],
-            verbose=self.model_params["verbose"],
+            y=[
+                self.data_dic['train_label'],
+                self.data_dic['test_label_for_transfer']
+            ],
+            epochs=self.args.epochs,
+            verbose=1,
             class_weight=[self.class_weights, self.class_weights],
             validation_data=([
-                self.validation_feature, self.validation_feature_for_transfer,
-                self.validation_label, self.validation_label_for_transfer
-            ], [self.validation_label, self.validation_label_for_transfer]),
-            batch_size=self.model_params["batch_size"],
-            shuffle=self.model_params["shuffle"],
+                self.data_dic['validation_feature'],
+                self.data_dic['validation_feature_for_transfer'],
+                self.data_dic['validation_label'],
+                self.data_dic['validation_label_for_transfer']
+            ], [
+                self.data_dic['validation_label'],
+                self.data_dic['validation_label_for_transfer']
+            ]),
+            batch_size=self.args.batch_size,
+            shuffle=True,
             callbacks=[early_stopping])
 
         self._save_model()
@@ -415,7 +346,7 @@ class TransferClassSensitiveModel():
         self._load_exist_model()
         self._get_predict_result_and_middle_feature()
         generate_metrics(self.dic_path)
-        plot(self.dic_path, self.train_motor, self.test_motor)
+        plot(self.dic_path, self.args.train_motor, self.args.test_motor)
 
     def get_model(self):
         return self.model

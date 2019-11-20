@@ -1,38 +1,29 @@
+import argparse
 import gc
+import json
 import logging
 import os
 import sys
 import time
 
-import lightgbm as lgb
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sns
+import tensorflow as tf
 from keras import backend as K
 from keras.callbacks import EarlyStopping
-from keras.layers import (LSTM, BatchNormalization, Conv1D, Dense, Dropout,
-                          Flatten, Input, Lambda, concatenate)
-from keras.metrics import categorical_accuracy
-from keras.models import Model, Sequential, load_model
-from keras.preprocessing import sequence
-from keras.regularizers import Regularizer
-from keras.utils import plot_model
-from keras.wrappers.scikit_learn import KerasRegressor
-from scipy.signal import savgol_filter
+from keras.layers import LSTM, Conv1D, Dense, Dropout, Flatten, Input
+from keras.models import Model, load_model
 from sklearn import preprocessing
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.utils import class_weight
-import tensorflow as tf
 
 parent_path = os.path.dirname(sys.path[0])
 if parent_path not in sys.path:
     sys.path.append(parent_path)
-from constants import const
-import json
+
 import handle_result
 import plot_lstm_feature
+from constants import const
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -40,11 +31,10 @@ logger = logging.getLogger(__name__)
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
-import argparse
 parser = argparse.ArgumentParser(description='manual to this script')
-parser.add_argument('--train-motor', type=str, default = '0')
-parser.add_argument('--train-flag', type=str, default = 'True')
-parser.add_argument('--model-dic-path', type=str, default = None)
+parser.add_argument('--train-motor', help='train motor index', type=str, default = '0')
+parser.add_argument('--train-flag', help='if train or load a exist model', type=str, default = 'True')
+parser.add_argument('--model-dic-path', help='if train-flag = True, provide a model dic path', type=str, default = None)
 args = parser.parse_args()
 
 
@@ -297,7 +287,7 @@ def main():
         "epochs": 100,
         "verbose": 1,
         "shuffle": True,
-        "early_stopping_patience": 5,
+        "early_stopping_patience": 10,
     }
 
     if params["train_flag"]:

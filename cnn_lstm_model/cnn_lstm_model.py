@@ -1,48 +1,38 @@
+import argparse
 import gc
+import json
 import logging
 import os
 import sys
 import time
 
-import lightgbm as lgb
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sns
+import tensorflow as tf
 from keras import backend as K
 from keras.callbacks import EarlyStopping
-from keras.layers import (LSTM, BatchNormalization, Conv1D, Dense, Dropout,
-                          Flatten, Input, Lambda, concatenate)
-from keras.metrics import categorical_accuracy
-from keras.models import Model, Sequential, load_model
-from keras.preprocessing import sequence
-from keras.regularizers import Regularizer
-from keras.utils import plot_model
-from keras.wrappers.scikit_learn import KerasRegressor
-from scipy.signal import savgol_filter
+from keras.layers import LSTM, Conv1D, Dense, Dropout, Flatten, Input
+from keras.models import Model, load_model
 from sklearn import preprocessing
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.utils import class_weight
-import tensorflow as tf
 
 parent_path = os.path.dirname(sys.path[0])
 if parent_path not in sys.path:
     sys.path.append(parent_path)
-from constants import const
-import json
+
 import handle_result
 import plot_lstm_feature
+from constants import const
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
 logger = logging.getLogger(__name__)
 tf.logging.set_verbosity(tf.logging.ERROR)
-import argparse
+
 parser = argparse.ArgumentParser(description='manual to this script')
-parser.add_argument('--train-motor', type=str, default = '0')
-parser.add_argument('--train-flag', type=str, default = 'True')
-parser.add_argument('--model-dic-path', type=str, default = None)
+parser.add_argument('--train-motor', type=str, default='0')
+parser.add_argument('--train-flag', type=str, default='True')
+parser.add_argument('--model-dic-path', type=str, default=None)
 args = parser.parse_args()
 
 
@@ -81,17 +71,20 @@ class CnnLstmModel():
         self.history = None
 
     def _model(self):
-        input_train = Input(
-            shape=(const.SLIDING_WINDOW_LENGTH, 2), name="input_train")
+        input_train = Input(shape=(const.SLIDING_WINDOW_LENGTH, 2),
+                            name="input_train")
 
-        conv_1_train = Conv1D(
-            10, 3, strides=1, activation="tanh", name="conv_1_shared")(input_train)
+        conv_1_train = Conv1D(10,
+                              3,
+                              strides=1,
+                              activation="tanh",
+                              name="conv_1_shared")(input_train)
 
         conv_1_dropout = Dropout(0.3)(conv_1_train)
 
-        lstm_1 = LSTM(
-            self.model_params["hidden_size"] , return_sequences=True,
-            activation="tanh")(conv_1_dropout)
+        lstm_1 = LSTM(self.model_params["hidden_size"],
+                      return_sequences=True,
+                      activation="tanh")(conv_1_dropout)
         lstm_1_dropout = Dropout(0.3)(lstm_1)
 
         flatten = Flatten()(lstm_1_dropout)
@@ -99,15 +92,14 @@ class CnnLstmModel():
 
         self.model = Model(inputs=input_train, outputs=output)
 
-        self.model.compile(
-            loss="categorical_crossentropy",
-            optimizer="rmsprop",
-            metrics=["accuracy"])
+        self.model.compile(loss="categorical_crossentropy",
+                           optimizer="rmsprop",
+                           metrics=["accuracy"])
 
     def _save_model(self):
         logger.info("Saved model...")
-        self.model.save(
-            self.dic_path + "/model.h5")  # creates a HDF5 file "my_model.h5"
+        self.model.save(self.dic_path +
+                        "/model.h5")  # creates a HDF5 file "my_model.h5"
 
     def _save_figure(self, show=False):
         logger.info("Saved evaluate figure...")
@@ -177,28 +169,27 @@ class CnnLstmModel():
 
         del train_predict_result_inverse, test_predict_result_inverse
         gc.collect()
-        
+
         train_label_inverse = self.one_hot_encoder.inverse_transform(
             self.train_label)
-        train_label_inverse = np.reshape(
-            train_label_inverse,
-            (train_label_inverse.shape[0]))
-        np.save(self.dic_path + "/train_label.npy",
-                train_label_inverse)
+        train_label_inverse = np.reshape(train_label_inverse,
+                                         (train_label_inverse.shape[0]))
+        np.save(self.dic_path + "/train_label.npy", train_label_inverse)
 
         logger.info("Get softmax layer output...")
-        get_softmax_layer_output = K.function([self.model.layers[0].input], [
-            self.model.layers[-1].output
-        ])
-        train_softmax_layer_output = get_softmax_layer_output([self.train_feature])
-        test_softmax_layer_output = get_softmax_layer_output([self.test_feature])
+        get_softmax_layer_output = K.function([self.model.layers[0].input],
+                                              [self.model.layers[-1].output])
+        train_softmax_layer_output = get_softmax_layer_output(
+            [self.train_feature])
+        test_softmax_layer_output = get_softmax_layer_output(
+            [self.test_feature])
 
         # softmax output
         np.save(self.dic_path + "/train_softmax_feature.npy",
                 train_softmax_layer_output)
         np.save(self.dic_path + "/test_softmax_feature.npy",
                 test_softmax_layer_output)
-        
+
         logger.info("Get middle feature output from cnn/lstm/dense...")
         get_layer_output = K.function([self.model.layers[0].input], [
             self.model.layers[1].output, self.model.layers[4].output,
@@ -223,12 +214,13 @@ class CnnLstmModel():
                 train_layer_output[2])
         np.save(self.dic_path + "/test_softmax_feature.npy",
                 test_layer_output[2])
-        
 
     def train_model(self):
         self._model()
         early_stopping = EarlyStopping(
-            monitor="val_loss", patience=self.model_params["early_stopping_patience"], verbose=1)
+            monitor="val_loss",
+            patience=self.model_params["early_stopping_patience"],
+            verbose=1)
         self.history = self.model.fit(
             x=self.train_feature,
             y=self.train_label,
@@ -266,22 +258,20 @@ def main():
     params = {
         "train_motor": args.train_motor,
         "test_motor": 3,
-
-        "train_flag": False,
+        "train_flag": args.train_flag,
         # "model_dic_path": "saved_model/2019_07_20_16_27_14_cnn_lstm_sliding_20_motor_train_2_test_3",
         # model_path = "saved_model/2019_07_20_15_28_33_cnn_lstm_sliding_20_motor_train_0_test_3/model.h5"
-        # model_path = "saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3/model.h5"     
-        # "model_dic_path": "saved_model/2019_09_04_20_36_14_cnn_lstm_sliding_20_motor_train_0_test_0"  
-        # "model_dic_path": "saved_model/2019_09_04_22_09_31_cnn_lstm_sliding_20_motor_train_3_test_3"  
-        # "model_dic_path": "saved_model/2019_09_04_20_49_52_cnn_lstm_sliding_20_motor_train_1_test_1" 
-        # "model_dic_path": "saved_model/2019_09_04_21_07_13_cnn_lstm_sliding_20_motor_train_2_test_2" 
-        # "model_dic_path": "saved_model/2019_07_18_16_46_38_cnn_lstm_sliding_20_motor_train_1_test_3"    
-        "model_dic_path": args.model_dic_path                                                                                                                                                                                                                                      
+        # model_path = "saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3/model.h5"
+        # "model_dic_path": "saved_model/2019_09_04_20_36_14_cnn_lstm_sliding_20_motor_train_0_test_0"
+        # "model_dic_path": "saved_model/2019_09_04_22_09_31_cnn_lstm_sliding_20_motor_train_3_test_3"
+        # "model_dic_path": "saved_model/2019_09_04_20_49_52_cnn_lstm_sliding_20_motor_train_1_test_1"
+        # "model_dic_path": "saved_model/2019_09_04_21_07_13_cnn_lstm_sliding_20_motor_train_2_test_2"
+        # "model_dic_path": "saved_model/2019_07_18_16_46_38_cnn_lstm_sliding_20_motor_train_1_test_3"
+        "model_dic_path": args.model_dic_path
     }
     model_params = {
         "batch_size": 512,
         "hidden_size": 32,
-
         "epochs": 100,
         "verbose": 0,
         "shuffle": True,
@@ -291,8 +281,9 @@ def main():
     if params["train_flag"]:
         # mkdir
         dic_path = "saved_model/{}_cnn_lstm_sliding_{}_motor_train_{}_test_{}".format(
-            time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()),
-            const.SLIDING_WINDOW_LENGTH, params["train_motor"], params["test_motor"])
+            time.strftime("%Y_%m_%d_%H_%M_%S",
+                          time.localtime()), const.SLIDING_WINDOW_LENGTH,
+            params["train_motor"], params["test_motor"])
         mkdir(dic_path)
         logger.info("mkdir : " + dic_path)
     else:
@@ -321,7 +312,7 @@ def main():
     test_label = np.load(
         "../dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
         format(params["test_motor"], const.SLIDING_WINDOW_LENGTH))
-    
+
     # train_feature, test_feature, train_label, test_label = train_test_split(
     #     train_feature, train_label, test_size=0.2, random_state=0)
 
@@ -366,20 +357,18 @@ def main():
         .format(validation_feature_split.shape, validation_split_label.shape))
 
     logger.info("Train/Load model and predict...")
-    cur_model = CnnLstmModel(
-        train_feature_split, train_split_label, validation_feature_split,
-        validation_split_label, test_feature, test_label_encoder,
-        one_hot_encoder, model_params, dic_path, params['train_motor'], params['test_motor'])
+    cur_model = CnnLstmModel(train_feature_split, train_split_label,
+                             validation_feature_split, validation_split_label,
+                             test_feature, test_label_encoder, one_hot_encoder,
+                             model_params, dic_path, params['train_motor'],
+                             params['test_motor'])
     if params["train_flag"]:
         cur_model.train_model()
     else:
         cur_model.predict_with_exist_model()
 
     # save params
-    saved_params = {
-        "params": params,
-        "model_params": model_params
-    }
+    saved_params = {"params": params, "model_params": model_params}
     with open(dic_path + '/saved_params.json', 'w') as fp:
         json.dump(saved_params, fp)
 

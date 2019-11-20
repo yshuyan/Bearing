@@ -45,7 +45,7 @@ def main(args):
 
     if args.train_flag:
         # mkdir
-        dic_path = "{}/saved_model/{}_cnn_lstm_sliding_{}_motor_train_{}_test_{}".format(
+        dic_path = "{}/saved_model/{}_transfer_class_sensitive_model_{}_motor_train_{}_test_{}".format(
             module_path, time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()),
             args.sliding_window_length, args.train_motor, args.test_motor)
         mkdir(dic_path)

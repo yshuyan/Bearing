@@ -44,6 +44,7 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 import argparse
 parser = argparse.ArgumentParser(description='manual to this script')
 parser.add_argument('--train-motor', type=str, default = '0')
+parser.add_argument('--train-flag', type=str, default = 'True')
 parser.add_argument('--model-dic-path', type=str, default = None)
 args = parser.parse_args()
 
@@ -71,6 +72,11 @@ def gaussian_kernel(x1, x2, beta=1.0):
 
 def get_mmd_loss(y_true, y_pred):
     return y_pred
+
+def auc(y_true, y_pred):
+    auc = tf.metrics.auc(y_true, y_pred)[1]
+    # K.get_session().run(tf.local_variables_initializer())
+    return auc
 
 
 def mkdir(path):

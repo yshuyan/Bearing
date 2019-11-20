@@ -37,39 +37,15 @@ import plot_lstm_feature
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
 logger = logging.getLogger(__name__)
+
 tf.logging.set_verbosity(tf.logging.ERROR)
+
 import argparse
 parser = argparse.ArgumentParser(description='manual to this script')
 parser.add_argument('--train-motor', type=str, default = '0')
+parser.add_argument('--train-flag', type=str, default = 'True')
 parser.add_argument('--model-dic-path', type=str, default = None)
 args = parser.parse_args()
-
-
-
-def mmd(x):
-    """
-    maximum mean discrepancy (MMD) based on Gaussian kernel
-    function for keras models (theano or tensorflow backend)
-    
-    - Gretton, Arthur, et al. "A kernel method for the two-sample-problem."
-    Advances in neural information processing systems. 2007.
-    """
-    beta = 1.0
-    x1x1 = gaussian_kernel(x[0], x[0], beta)
-    x1x2 = gaussian_kernel(x[0], x[1], beta)
-    x2x2 = gaussian_kernel(x[1], x[1], beta)
-    diff = K.mean(x1x1) - 2 * K.mean(x1x2) + K.mean(x2x2)
-    return diff
-
-
-def gaussian_kernel(x1, x2, beta=1.0):
-    # r = x1.dimshuffle(0,"x",1)
-    r = K.expand_dims(x1, 1)
-    return K.exp(-beta * K.sum(K.square(r - x2), axis=-1))
-
-
-def get_mmd_loss(y_true, y_pred):
-    return y_pred
 
 
 def mkdir(path):
@@ -86,10 +62,10 @@ def get_random_block_from_test(data, size):
     return data
 
 
-class Amount_sensitive_model():
+class AmountSensitiveModel():
     def __init__(self, train_feature, train_label, validation_feature,
                  validation_label, test_feature, test_label, one_hot_encoder,
-                 model_params, dic_path, train_motor, test_motor):
+                 model_params, class_weights, dic_path, train_motor, test_motor):
         self.train_feature = train_feature
         self.train_label = train_label
         self.validation_feature = validation_feature
@@ -98,6 +74,7 @@ class Amount_sensitive_model():
         self.test_label = test_label
         self.one_hot_encoder = one_hot_encoder
         self.model_params = model_params
+        self.class_weights = class_weights
         self.dic_path = dic_path
         self.train_motor = train_motor
         self.test_motor = test_motor
@@ -109,13 +86,9 @@ class Amount_sensitive_model():
     def _model(self):
         input_train = Input(
             shape=(const.SLIDING_WINDOW_LENGTH, 2), name="input_train")
-        input_test = Input(
-            shape=(const.SLIDING_WINDOW_LENGTH, 2), name="input_test")
 
-        conv_1_shared = Conv1D(
-            10, 3, strides=1, activation="tanh", name="conv_1_shared")
-        conv_1_train = conv_1_shared(input_train)
-        conv_1_test = conv_1_shared(input_test)
+        conv_1_train = Conv1D(
+            10, 3, strides=1, activation="tanh", name="conv_1_shared")(input_train)
 
         conv_1_dropout = Dropout(0.3)(conv_1_train)
 
@@ -207,7 +180,7 @@ class Amount_sensitive_model():
 
         del train_predict_result_inverse, test_predict_result_inverse
         gc.collect()
-        
+
         train_label_inverse = self.one_hot_encoder.inverse_transform(
             self.train_label)
         train_label_inverse = np.reshape(
@@ -237,23 +210,23 @@ class Amount_sensitive_model():
 
         train_layer_output = get_layer_output([self.train_feature])
         test_layer_output = get_layer_output([self.test_feature])
-
+        '''
         # cnn feature
-        # np.save(self.dic_path + "/train_cnn_feature.npy",
-        #         train_layer_output[0])
-        # np.save(self.dic_path + "/test_cnn_feature.npy", test_layer_output[0])
-
+        np.save(self.dic_path + "/train_cnn_feature.npy",
+                train_layer_output[0])
+        np.save(self.dic_path + "/test_cnn_feature.npy", test_layer_output[0])
+        '''
         # lstm fature
         np.save(self.dic_path + "/train_lstm_feature.npy",
                 train_layer_output[1])
         np.save(self.dic_path + "/test_lstm_feature.npy", test_layer_output[1])
-
+        '''
         # softmax output
         np.save(self.dic_path + "/train_softmax_feature.npy",
                 train_layer_output[2])
         np.save(self.dic_path + "/test_softmax_feature.npy",
                 test_layer_output[2])
-        
+        '''
 
     def train_model(self):
         self._model()
@@ -264,6 +237,7 @@ class Amount_sensitive_model():
             y=self.train_label,
             epochs=self.model_params["epochs"],
             verbose=self.model_params["verbose"],
+            class_weight=self.class_weights,
             validation_data=(self.validation_feature, self.validation_label),
             batch_size=self.model_params["batch_size"],
             shuffle=self.model_params["shuffle"],
@@ -286,7 +260,7 @@ class Amount_sensitive_model():
         self._load_exist_model()
         self._get_predict_result_and_middle_feature()
         handle_result.generate_metrics(self.dic_path)
-        # plot_lstm_feature.plot(self.dic_path, self.train_motor, self.test_motor)
+        plot_lstm_feature.plot(self.dic_path, self.train_motor, self.test_motor)
 
     def get_model(self):
         return self.model
@@ -297,23 +271,31 @@ def main():
         "train_motor": args.train_motor,
         "test_motor": 3,
 
-        "train_flag": False,
+        "train_flag": args.train_flag,
         # "model_dic_path": "saved_model/2019_07_20_16_27_14_cnn_lstm_sliding_20_motor_train_2_test_3",
         # model_path = "saved_model/2019_07_20_15_28_33_cnn_lstm_sliding_20_motor_train_0_test_3/model.h5"
-        # model_path = "saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3/model.h5"     
-        # "model_dic_path": "saved_model/2019_09_04_20_36_14_cnn_lstm_sliding_20_motor_train_0_test_0"  
-        # "model_dic_path": "saved_model/2019_09_04_22_09_31_cnn_lstm_sliding_20_motor_train_3_test_3"  
-        # "model_dic_path": "saved_model/2019_09_04_20_49_52_cnn_lstm_sliding_20_motor_train_1_test_1" 
-        # "model_dic_path": "saved_model/2019_09_04_21_07_13_cnn_lstm_sliding_20_motor_train_2_test_2" 
-        # "model_dic_path": "saved_model/2019_07_18_16_46_38_cnn_lstm_sliding_20_motor_train_1_test_3"    
-        "model_dic_path": args.model_dic_path                                                                                                                                                                                                                                      
+        # model_path = "saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3/model.h5"   
+        # "model_dic_path": "saved_model/2019_09_04_20_12_55_cnn_lstm_sliding_20_motor_train_0_test_0",      
+        # "model_dic_path": "saved_model/2019_09_04_19_57_17_cnn_lstm_sliding_20_motor_train_3_test_3",
+        # "model_dic_path": "saved_model/2019_09_04_19_34_08_cnn_lstm_sliding_20_motor_train_2_test_2",  
+        # "model_dic_path": "saved_model/2019_09_04_17_03_48_cnn_lstm_sliding_20_motor_train_1_test_1",   
+        # "model_dic_path": "saved_model/2019_09_06_10_22_02_cnn_lstm_sliding_20_motor_train_0_test_0",  
+        # "model_dic_path": "saved_model/2019_07_20_15_28_33_cnn_lstm_sliding_20_motor_train_0_test_3",
+        # "model_dic_path": "saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3",       
+        "model_dic_path": args.model_dic_path,                                                                                                                                                                                                                                 
+        "number_for_each_class": [
+            [300000, 8000, 40000, 30000, 50000, 30000, 20000, 10000, 2000, 10000],
+            [300000, 12000, 20000, 26000, 45000, 30000, 10000, 30000, 7000, 20000],
+            [300000, 20000, 30000, 30000, 60000, 25000, 8000, 15000, 10000, 2000],
+            [300000, 8000, 40000, 30000, 50000, 30000, 20000, 10000, 2000, 10000]
+        ]
     }
     model_params = {
         "batch_size": 512,
         "hidden_size": 32,
 
         "epochs": 100,
-        "verbose": 0,
+        "verbose": 1,
         "shuffle": True,
         "early_stopping_patience": 5,
     }
@@ -324,26 +306,31 @@ def main():
             time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()),
             const.SLIDING_WINDOW_LENGTH, params["train_motor"], params["test_motor"])
         mkdir(dic_path)
-        logger.info("mkdir : " + dic_path)
+        logging_file = dic_path + "/" + str(os.path.basename(__file__).split(".")[0]) + ".log"
     else:
         dic_path = params["model_dic_path"]
-        logger.info("exit model dir : " + dic_path)
+        logging_file = dic_path + "/" + str(os.path.basename(__file__).split(".")[0]) + "_add.log"
 
     logging.basicConfig(
-        filename=dic_path + "/" +
-        str(os.path.basename(__file__).split(".")[0] + ".log"),
+        filename=logging_file,
         # stream=sys.stdout,
         level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        filemode="w"
     )
     # load data
+        
     logger.info("Loading feature and label...")
+    
     train_feature = np.load(
         "../dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
         format(params["train_motor"], const.SLIDING_WINDOW_LENGTH))
     train_label = np.load(
         "../dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
         format(params["train_motor"], const.SLIDING_WINDOW_LENGTH))
+    
+    # train_feature, test_feature, train_label, test_label = train_test_split(
+    #     train_feature, train_label, test_size=0.2, random_state=0)
 
     test_feature = np.load(
         "../dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
@@ -351,9 +338,6 @@ def main():
     test_label = np.load(
         "../dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
         format(params["test_motor"], const.SLIDING_WINDOW_LENGTH))
-    
-    # train_feature, test_feature, train_label, test_label = train_test_split(
-    #     train_feature, train_label, test_size=0.2, random_state=0)
 
     logger.info("train feature shape : {} train label shape : {}".format(
         train_feature.shape, train_label.shape))
@@ -383,6 +367,15 @@ def main():
         train_label_encoder.shape))
     logger.info("test label encoder shape  : {}".format(
         test_label_encoder.shape))
+    # Generate class weights
+    logger.info("Generate class weights...")
+    y_integers = np.argmax(train_label_encoder, axis=1)
+    class_weights = class_weight.compute_class_weight("balanced",
+                                                      np.unique(y_integers),
+                                                      y_integers)
+    class_weights_dic = dict(enumerate(class_weights))
+    model_params.update({"class_weights": class_weights_dic})
+    logger.info("class weight : {}".format(class_weights_dic))
 
     # Split train/valid/test
     logger.info("Split train/valid/test...")
@@ -396,10 +389,10 @@ def main():
         .format(validation_feature_split.shape, validation_split_label.shape))
 
     logger.info("Train/Load model and predict...")
-    cur_model = Amount_sensitive_model(
+    cur_model = AmountSensitiveModel(
         train_feature_split, train_split_label, validation_feature_split,
         validation_split_label, test_feature, test_label_encoder,
-        one_hot_encoder, model_params, dic_path, params['train_motor'], params['test_motor'])
+        one_hot_encoder, model_params, class_weights, dic_path, params['train_motor'], params['test_motor'])
     if params["train_flag"]:
         cur_model.train_model()
     else:
@@ -412,6 +405,7 @@ def main():
     }
     with open(dic_path + '/saved_params.json', 'w') as fp:
         json.dump(saved_params, fp)
+    
 
 
 if __name__ == "__main__":

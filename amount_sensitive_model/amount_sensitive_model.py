@@ -32,9 +32,20 @@ logger = logging.getLogger(__name__)
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 parser = argparse.ArgumentParser(description='manual to this script')
-parser.add_argument('--train-motor', help='train motor index', type=str, default = '0')
-parser.add_argument('--train-flag', help='if train or load a exist model', type=str, default = 'True')
-parser.add_argument('--model-dic-path', help='if train-flag = True, provide a model dic path', type=str, default = None)
+parser.add_argument('--train-motor',
+                    help='train motor index',
+                    type=str,
+                    default='0')
+
+flag_parser = parser.add_mutually_exclusive_group(required=False)
+flag_parser.add_argument('--flag', dest='flag', action='store_true')
+flag_parser.add_argument('--no-flag', dest='flag', action='store_false')
+parser.set_defaults(flag=True)
+
+parser.add_argument('--model-dic-path',
+                    help='if train-flag = True, provide a model dic path',
+                    type=str,
+                    default=None)
 args = parser.parse_args()
 
 
@@ -42,8 +53,8 @@ def mkdir(path):
 
     folder = os.path.exists(path)
 
-    if not folder:  #判断是否存在文件夹如果不存在则创建为文件夹
-        os.makedirs(path)  #makedirs 创建文件时如果路径不存在会创建这个路径
+    if not folder:  # 判断是否存在文件夹如果不存在则创建为文件夹
+        os.makedirs(path)  # makedirs 创建文件时如果路径不存在会创建这个路径
 
 
 def get_random_block_from_test(data, size):
@@ -55,7 +66,8 @@ def get_random_block_from_test(data, size):
 class AmountSensitiveModel():
     def __init__(self, train_feature, train_label, validation_feature,
                  validation_label, test_feature, test_label, one_hot_encoder,
-                 model_params, class_weights, dic_path, train_motor, test_motor):
+                 model_params, class_weights, dic_path, train_motor,
+                 test_motor):
         self.train_feature = train_feature
         self.train_label = train_label
         self.validation_feature = validation_feature
@@ -74,17 +86,20 @@ class AmountSensitiveModel():
         self.history = None
 
     def _model(self):
-        input_train = Input(
-            shape=(const.SLIDING_WINDOW_LENGTH, 2), name="input_train")
+        input_train = Input(shape=(const.SLIDING_WINDOW_LENGTH, 2),
+                            name="input_train")
 
-        conv_1_train = Conv1D(
-            10, 3, strides=1, activation="tanh", name="conv_1_shared")(input_train)
+        conv_1_train = Conv1D(10,
+                              3,
+                              strides=1,
+                              activation="tanh",
+                              name="conv_1_shared")(input_train)
 
         conv_1_dropout = Dropout(0.3)(conv_1_train)
 
-        lstm_1 = LSTM(
-            self.model_params["hidden_size"] , return_sequences=True,
-            activation="tanh")(conv_1_dropout)
+        lstm_1 = LSTM(self.model_params["hidden_size"],
+                      return_sequences=True,
+                      activation="tanh")(conv_1_dropout)
         lstm_1_dropout = Dropout(0.3)(lstm_1)
 
         flatten = Flatten()(lstm_1_dropout)
@@ -92,15 +107,14 @@ class AmountSensitiveModel():
 
         self.model = Model(inputs=input_train, outputs=output)
 
-        self.model.compile(
-            loss="categorical_crossentropy",
-            optimizer="rmsprop",
-            metrics=["accuracy"])
+        self.model.compile(loss="categorical_crossentropy",
+                           optimizer="rmsprop",
+                           metrics=["accuracy"])
 
     def _save_model(self):
         logger.info("Saved model...")
-        self.model.save(
-            self.dic_path + "/model.h5")  # creates a HDF5 file "my_model.h5"
+        self.model.save(self.dic_path +
+                        "/model.h5")  # creates a HDF5 file "my_model.h5"
 
     def _save_figure(self, show=False):
         logger.info("Saved evaluate figure...")
@@ -173,25 +187,24 @@ class AmountSensitiveModel():
 
         train_label_inverse = self.one_hot_encoder.inverse_transform(
             self.train_label)
-        train_label_inverse = np.reshape(
-            train_label_inverse,
-            (train_label_inverse.shape[0]))
-        np.save(self.dic_path + "/train_label.npy",
-                train_label_inverse)
+        train_label_inverse = np.reshape(train_label_inverse,
+                                         (train_label_inverse.shape[0]))
+        np.save(self.dic_path + "/train_label.npy", train_label_inverse)
 
         logger.info("Get softmax layer output...")
-        get_softmax_layer_output = K.function([self.model.layers[0].input], [
-            self.model.layers[-1].output
-        ])
-        train_softmax_layer_output = get_softmax_layer_output([self.train_feature])
-        test_softmax_layer_output = get_softmax_layer_output([self.test_feature])
+        get_softmax_layer_output = K.function([self.model.layers[0].input],
+                                              [self.model.layers[-1].output])
+        train_softmax_layer_output = get_softmax_layer_output(
+            [self.train_feature])
+        test_softmax_layer_output = get_softmax_layer_output(
+            [self.test_feature])
 
         # softmax output
         np.save(self.dic_path + "/train_softmax_feature.npy",
                 train_softmax_layer_output)
         np.save(self.dic_path + "/test_softmax_feature.npy",
                 test_softmax_layer_output)
-        
+
         logger.info("Get middle feature output from cnn/lstm/dense...")
         get_layer_output = K.function([self.model.layers[0].input], [
             self.model.layers[1].output, self.model.layers[4].output,
@@ -217,11 +230,12 @@ class AmountSensitiveModel():
         np.save(self.dic_path + "/test_softmax_feature.npy",
                 test_layer_output[2])
         '''
-
     def train_model(self):
         self._model()
         early_stopping = EarlyStopping(
-            monitor="val_loss", patience=self.model_params["early_stopping_patience"], verbose=1)
+            monitor="val_loss",
+            patience=self.model_params["early_stopping_patience"],
+            verbose=1)
         self.history = self.model.fit(
             x=self.train_feature,
             y=self.train_label,
@@ -245,12 +259,15 @@ class AmountSensitiveModel():
         self._model_evaluate()
         self._get_predict_result_and_middle_feature()
         handle_result.generate_metrics(self.dic_path)
+        plot_lstm_feature.plot(self.dic_path, self.train_motor,
+                               self.test_motor)
 
     def predict_with_exist_model(self):
         self._load_exist_model()
         self._get_predict_result_and_middle_feature()
         handle_result.generate_metrics(self.dic_path)
-        plot_lstm_feature.plot(self.dic_path, self.train_motor, self.test_motor)
+        plot_lstm_feature.plot(self.dic_path, self.train_motor,
+                               self.test_motor)
 
     def get_model(self):
         return self.model
@@ -258,33 +275,19 @@ class AmountSensitiveModel():
 
 def main():
     params = {
-        "train_motor": args.train_motor,
-        "test_motor": 3,
-
-        "train_flag": args.train_flag,
-        # "model_dic_path": "saved_model/2019_07_20_16_27_14_cnn_lstm_sliding_20_motor_train_2_test_3",
-        # model_path = "saved_model/2019_07_20_15_28_33_cnn_lstm_sliding_20_motor_train_0_test_3/model.h5"
-        # model_path = "saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3/model.h5"   
-        # "model_dic_path": "saved_model/2019_09_04_20_12_55_cnn_lstm_sliding_20_motor_train_0_test_0",      
-        # "model_dic_path": "saved_model/2019_09_04_19_57_17_cnn_lstm_sliding_20_motor_train_3_test_3",
-        # "model_dic_path": "saved_model/2019_09_04_19_34_08_cnn_lstm_sliding_20_motor_train_2_test_2",  
-        # "model_dic_path": "saved_model/2019_09_04_17_03_48_cnn_lstm_sliding_20_motor_train_1_test_1",   
-        # "model_dic_path": "saved_model/2019_09_06_10_22_02_cnn_lstm_sliding_20_motor_train_0_test_0",  
-        # "model_dic_path": "saved_model/2019_07_20_15_28_33_cnn_lstm_sliding_20_motor_train_0_test_3",
-        # "model_dic_path": "saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3",       
-        "model_dic_path": args.model_dic_path,                                                                                                                                                                                                                                 
-        "number_for_each_class": [
-            [300000, 8000, 40000, 30000, 50000, 30000, 20000, 10000, 2000, 10000],
-            [300000, 12000, 20000, 26000, 45000, 30000, 10000, 30000, 7000, 20000],
-            [300000, 20000, 30000, 30000, 60000, 25000, 8000, 15000, 10000, 2000],
-            [300000, 8000, 40000, 30000, 50000, 30000, 20000, 10000, 2000, 10000]
-        ]
+        "train_motor":
+        args.train_motor,
+        "test_motor":
+        3,
+        "train_flag":
+        args.flag,
+        "model_dic_path":
+        args.model_dic_path
     }
     model_params = {
         "batch_size": 512,
         "hidden_size": 32,
-
-        "epochs": 100,
+        "epochs": 30,
         "verbose": 1,
         "shuffle": True,
         "early_stopping_patience": 10,
@@ -293,32 +296,34 @@ def main():
     if params["train_flag"]:
         # mkdir
         dic_path = "saved_model/{}_cnn_lstm_sliding_{}_motor_train_{}_test_{}".format(
-            time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()),
-            const.SLIDING_WINDOW_LENGTH, params["train_motor"], params["test_motor"])
+            time.strftime("%Y_%m_%d_%H_%M_%S",
+                          time.localtime()), const.SLIDING_WINDOW_LENGTH,
+            params["train_motor"], params["test_motor"])
         mkdir(dic_path)
-        logging_file = dic_path + "/" + str(os.path.basename(__file__).split(".")[0]) + ".log"
+        logging_file = dic_path + "/" + str(
+            os.path.basename(__file__).split(".")[0]) + ".log"
     else:
         dic_path = params["model_dic_path"]
-        logging_file = dic_path + "/" + str(os.path.basename(__file__).split(".")[0]) + "_add.log"
+        logging_file = dic_path + "/" + str(
+            os.path.basename(__file__).split(".")[0]) + "_add.log"
 
     logging.basicConfig(
         filename=logging_file,
         # stream=sys.stdout,
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
-        filemode="w"
-    )
+        filemode="w")
     # load data
-        
+
     logger.info("Loading feature and label...")
-    
+
     train_feature = np.load(
         "../dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
         format(params["train_motor"], const.SLIDING_WINDOW_LENGTH))
     train_label = np.load(
         "../dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
         format(params["train_motor"], const.SLIDING_WINDOW_LENGTH))
-    
+
     # train_feature, test_feature, train_label, test_label = train_test_split(
     #     train_feature, train_label, test_size=0.2, random_state=0)
 
@@ -382,20 +387,17 @@ def main():
     cur_model = AmountSensitiveModel(
         train_feature_split, train_split_label, validation_feature_split,
         validation_split_label, test_feature, test_label_encoder,
-        one_hot_encoder, model_params, class_weights, dic_path, params['train_motor'], params['test_motor'])
+        one_hot_encoder, model_params, class_weights, dic_path,
+        params['train_motor'], params['test_motor'])
     if params["train_flag"]:
         cur_model.train_model()
     else:
         cur_model.predict_with_exist_model()
 
     # save params
-    saved_params = {
-        "params": params,
-        "model_params": model_params
-    }
+    saved_params = {"params": params, "model_params": model_params}
     with open(dic_path + '/saved_params.json', 'w') as fp:
         json.dump(saved_params, fp)
-    
 
 
 if __name__ == "__main__":

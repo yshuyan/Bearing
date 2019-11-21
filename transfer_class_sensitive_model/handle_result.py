@@ -37,27 +37,6 @@ def generate_metrics(path, ifTrain=True):
     ]
     confusion_matrix = metrics.confusion_matrix(test_y_true, test_y_pred)
 
-    # logger.info("auc   micro : {:.6f}   macro : {:.6f}  weighted : {:.6f}",format(average_list[0], average_list[1], average_list[2]))
-    # logger.info("f1_score :")
-    # for i in range(len(average_list)):
-    #     logger.info('{} : {} \n'.format(average_list[i], f1_score[i]))
-
-    # logger.info("recall_score :")
-    # for i in range(len(average_list)):
-    #     logger.info('{} : {} \n'.format(average_list[i], recall_score[i]))
-
-    # logger.info("precision_score :")
-    # for i in range(len(average_list)):
-    #     logger.info('{} : {} \n'.format(average_list[i], precision_score[i]))
-
-    # logger.info("confusion_matrix :")
-    # for item in target_names:
-    #     logger.info('{:<10s} '.format(item))
-    # for i in range(len(confusion_matrix)):
-    #     logger.info('{:<10s} '.format(target_names[i + 1]))
-    # for item in confusion_matrix[i]:
-    #     logger.info('{:<10d} '.format(item))
-
     with open(path + '/metrics_{}.txt'.format(pre), 'w') as f:
         # auc
         f.write('auc : \n')
@@ -97,6 +76,5 @@ def generate_metrics(path, ifTrain=True):
             for item in confusion_matrix[i]:
                 f.write('{:<10d} '.format(item))
             f.write('\n')
-
 
 # generate_metrics("saved_model/2019_10_29_15_46_16_cnn_lstm_sliding_20_motor_train_0_test_3")

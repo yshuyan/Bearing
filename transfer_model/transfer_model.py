@@ -394,6 +394,8 @@ class Transfer_model():
         # self._model_evaluate()
         self._get_predict_result_and_middle_feature()
         handle_result.generate_metrics(self.dic_path)
+        plot_lstm_feature.plot(self.dic_path, self.train_motor,
+                               self.test_motor)
 
     def predict_with_exist_model(self):
         self._load_exist_model()
@@ -524,7 +526,6 @@ def main():
         params['test_motor'])
 
     if params["train_flag"]:
-        print('why???????')
         cur_model.train_model()
     else:
         cur_model.predict_with_exist_model()

@@ -50,7 +50,6 @@ def mmd(x):
 
 def gaussian_kernel(x1, x2, beta=1.0):
     # r = x1.dimshuffle(0,"x",1)
-
     r = K.expand_dims(x1, 1)
     return K.exp(-beta * K.sum(K.square(r - x2), axis=-1))
 
@@ -234,7 +233,6 @@ class TransferClassSensitiveModel():
         ])
 
         print("test has been predicted ...")
-
         np.save(self.dic_path + "/train_label_encoder.npy", self.data_dic['train_label'])
 
         np.save(self.dic_path + "/train_predict_result.npy",

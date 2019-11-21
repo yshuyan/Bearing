@@ -31,7 +31,12 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 
 parser = argparse.ArgumentParser(description='manual to this script')
 parser.add_argument('--train-motor', type=str, default='0')
-parser.add_argument('--train-flag', type=str, default='True')
+
+flag_parser = parser.add_mutually_exclusive_group(required=False)
+flag_parser.add_argument('--flag', dest='flag', action='store_true')
+flag_parser.add_argument('--no-flag', dest='flag', action='store_false')
+parser.set_defaults(flag=True)
+
 parser.add_argument('--model-dic-path', type=str, default=None)
 args = parser.parse_args()
 
@@ -243,12 +248,13 @@ class CnnLstmModel():
         self._model_evaluate()
         self._get_predict_result_and_middle_feature()
         handle_result.generate_metrics(self.dic_path)
+        plot_lstm_feature.plot(self.dic_path, self.train_motor, self.test_motor)
 
     def predict_with_exist_model(self):
         self._load_exist_model()
         self._get_predict_result_and_middle_feature()
         handle_result.generate_metrics(self.dic_path)
-        # plot_lstm_feature.plot(self.dic_path, self.train_motor, self.test_motor)
+        plot_lstm_feature.plot(self.dic_path, self.train_motor, self.test_motor)
 
     def get_model(self):
         return self.model
@@ -258,7 +264,7 @@ def main():
     params = {
         "train_motor": args.train_motor,
         "test_motor": 3,
-        "train_flag": args.train_flag,
+        "train_flag": args.flag,
         # "model_dic_path": "saved_model/2019_07_20_16_27_14_cnn_lstm_sliding_20_motor_train_2_test_3",
         # model_path = "saved_model/2019_07_20_15_28_33_cnn_lstm_sliding_20_motor_train_0_test_3/model.h5"
         # model_path = "saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3/model.h5"

@@ -1,17 +1,8 @@
 import numpy as np
 from sklearn import metrics
 
-# path = 'saved_model/2019_07_20_15_28_33_cnn_lstm_sliding_20_motor_train_0_test_3'
-# path = 'saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3'
-# path = 'saved_model/2019_07_20_16_27_14_cnn_lstm_sliding_20_motor_train_2_test_3'
-# path = 'saved_model/2019_09_04_20_12_55_cnn_lstm_sliding_20_motor_train_0_test_0'
-# path = "saved_model/2019_09_04_19_57_17_cnn_lstm_sliding_20_motor_train_3_test_3"
-# path = "saved_model/2019_09_04_19_34_08_cnn_lstm_sliding_20_motor_train_2_test_2"
-#path = "saved_model/2019_09_04_17_03_48_cnn_lstm_sliding_20_motor_train_1_test_1"
-# path = "saved_model/2019_09_06_10_22_02_cnn_lstm_sliding_20_motor_train_0_test_0"
 
-
-def generate_metrics(path, ifTrain=False):
+def generate_metrics(path, ifTrain=True):
     pre = 'test' if ifTrain else 'train'
     average_list = ['micro', 'macro', 'weighted', None]
     target_names = [
@@ -108,4 +99,4 @@ def generate_metrics(path, ifTrain=False):
             f.write('\n')
 
 
-# generate_metrics("saved_model/2019_10_29_15_46_16_cnn_lstm_sliding_20_motor_train_0_test_3")
+# generate_metrics("saved_model/2019_11_20_13_44_33_cnn_lstm_sliding_20_motor_train_0_test_3")

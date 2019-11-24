@@ -422,7 +422,7 @@ def main():
     model_params = {
         "batch_size": 512,
         "hidden_size": 32,
-        "epochs": 70,
+        "epochs": 60,
         "verbose": 1,
         "shuffle": True,
         "early_stopping_patience": 20,

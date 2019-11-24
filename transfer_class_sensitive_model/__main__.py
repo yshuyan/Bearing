@@ -35,7 +35,7 @@ def parse_args():
     parser.add_argument('--model-dic-path', type=str, default=None)
 
     parser.add_argument('--batch-size', type=int, default=512)
-    parser.add_argument('--hidden-size', type=int, default=512)
+    parser.add_argument('--hidden-size', type=int, default=32)
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--early-stopping-patience', type=int, default=10)
     parser.add_argument('--sliding-window-length', type=int, default=20)
@@ -148,7 +148,7 @@ def main(args):
         'test_feature': test_feature,
         'test_label': test_label_encoder
     }
-    cur_model = TransferClassSensitiveModel(data_dic, one_hot_encoder, args,
+    cur_model = TransferClassSensitiveModel(args, data_dic, one_hot_encoder,
                                             list(class_weights), dic_path)
     if args.flag:
         cur_model.train_model()
@@ -156,11 +156,12 @@ def main(args):
         cur_model.predict_with_exist_model()
 
     # save params
-    saved_params = {"params": args}
-    with open(dic_path + '/saved_params.json', 'w') as fp:
-        json.dump(saved_params, fp)
+    # saved_params = {"params": args}
+    # with open(dic_path + '/saved_params.json', 'w') as fp:
+    #     json.dump(saved_params, fp)
 
 
 if __name__ == "__main__":
     args = parse_args()
+    print(args)
     main(args)

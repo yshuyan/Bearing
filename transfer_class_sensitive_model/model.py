@@ -113,7 +113,7 @@ class TransferClassSensitiveModel():
                            outputs=[output, mmd_compute])
 
         self.model.compile(loss=['categorical_crossentropy', get_mmd_loss],
-                           loss_weights=[1., 1],
+                           loss_weights=[1., 0.1],
                            optimizer='rmsprop',
                            metrics={
                                'output_a': 'accuracy',
@@ -225,8 +225,8 @@ class TransferClassSensitiveModel():
         ])
 
         print("train has been predicted ...")
-        print(self.data_dic['test_feature.shape'], self.data_dic['test_feature_for_transfer'].shape,
-              self.data_dic['test_label.shape'], self.data_dic['test_label_for_transfer'].shape)
+        print(self.data_dic['test_feature'].shape, self.data_dic['test_feature_for_transfer'].shape,
+              self.data_dic['test_label'].shape, self.data_dic['test_label_for_transfer'].shape)
         test_predict_result = self.model.predict([
             self.data_dic['test_feature'], self.data_dic['test_feature'], self.data_dic['test_label'],
             self.data_dic['test_label']
@@ -263,7 +263,7 @@ class TransferClassSensitiveModel():
         gc.collect()
 
         train_label_inverse = self.one_hot_encoder.inverse_transform(
-            self.train_label)
+            self.data_dic['train_label'])
         train_label_inverse = np.reshape(train_label_inverse,
                                          (train_label_inverse.shape[0]))
         np.save(self.dic_path + "/train_label.npy", train_label_inverse)

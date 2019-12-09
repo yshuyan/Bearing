@@ -11,8 +11,8 @@ from keras.layers import LSTM, Conv1D, Dense, Dropout, Flatten, Input, Lambda
 from keras.models import Model, load_model
 
 from bearing.plot_lstm_feature import plot
-from bearing.transfer_class_sensitive_model.handle_result import \
-    generate_metrics
+from bearing.transfer_iter_model.data_generator import DataGenerator
+from bearing.transfer_iter_model.handle_result import generate_metrics
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -32,12 +32,12 @@ def mmd(x):
 
     train_tensor = tf.map_fn(
         lambda cur_x: tf.cond(
-            K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(cur_x, axis=0),
-            lambda: K.expand_dims(K.zeros_like(cur_x), axis=0)), x[2])
+            K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(K.zeros_like(cur_x), axis=0),
+            lambda: K.expand_dims(cur_x, axis=0)), x[2])
     test_tensor = tf.map_fn(
         lambda cur_x: tf.cond(
-            K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(cur_x, axis=0),
-            lambda: K.expand_dims(K.zeros_like(cur_x), axis=0)), x[3])
+            K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(K.zeros_like(cur_x), axis=0),
+            lambda: K.expand_dims(cur_x, axis=0)), x[3])
 
     beta = 1.0
     x1x1 = gaussian_kernel(train_tensor, train_tensor, beta)
@@ -121,8 +121,6 @@ class TransferClassSensitiveModel():
                            })
         return self.model
 
-    def batch_print_callback = LambdaCallback(
-    on_batch_begin=lambda batch,logs: print(batch))
     def _save_model(self):
         logger.info("Saved model...")
         self.model.save(self.dic_path +
@@ -222,20 +220,25 @@ class TransferClassSensitiveModel():
         print(self.data_dic['train_feature'].shape)
 
         train_predict_result = self.model.predict([
-            self.data_dic['train_feature'], self.data_dic['test_feature_for_transfer'],
-            self.data_dic['train_label'], self.data_dic['test_label_for_transfer']
+            self.data_dic['train_feature'],
+            self.data_dic['test_feature_for_transfer'],
+            self.data_dic['train_label'],
+            self.data_dic['test_label_for_transfer']
         ])
 
         print("train has been predicted ...")
-        print(self.data_dic['test_feature'].shape, self.data_dic['test_feature_for_transfer'].shape,
-              self.data_dic['test_label'].shape, self.data_dic['test_label_for_transfer'].shape)
+        print(self.data_dic['test_feature'].shape,
+              self.data_dic['test_feature_for_transfer'].shape,
+              self.data_dic['test_label'].shape,
+              self.data_dic['test_label_for_transfer'].shape)
         test_predict_result = self.model.predict([
-            self.data_dic['test_feature'], self.data_dic['test_feature'], self.data_dic['test_label'],
-            self.data_dic['test_label']
+            self.data_dic['test_feature'], self.data_dic['test_feature'],
+            self.data_dic['test_label'], self.data_dic['test_label']
         ])
 
         print("test has been predicted ...")
-        np.save(self.dic_path + "/train_label_encoder.npy", self.data_dic['train_label'])
+        np.save(self.dic_path + "/train_label_encoder.npy",
+                self.data_dic['train_label'])
 
         np.save(self.dic_path + "/train_predict_result.npy",
                 train_predict_result[0])
@@ -284,11 +287,15 @@ class TransferClassSensitiveModel():
         ])
 
         train_layer_output = get_layer_output([
-            self.data_dic['train_feature'], self.data_dic['test_feature_for_transfer'],
-            self.data_dic['train_label'], self.data_dic['test_label_for_transfer']
+            self.data_dic['train_feature'],
+            self.data_dic['test_feature_for_transfer'],
+            self.data_dic['train_label'],
+            self.data_dic['test_label_for_transfer']
         ])
         test_layer_output = get_layer_output([
-            self.data_dic['test_feature'], self.data_dic['test_feature_for_transfer'], self.data_dic['test_label'],
+            self.data_dic['test_feature'],
+            self.data_dic['test_feature_for_transfer'],
+            self.data_dic['test_label'],
             self.data_dic['test_label_for_transfer']
         ])
 
@@ -309,32 +316,30 @@ class TransferClassSensitiveModel():
             monitor="val_loss",
             patience=self.args.early_stopping_patience,
             verbose=1)
-        self.history = self.model.fit(
-            x=[
-                self.data_dic['train_feature'],
-                self.data_dic['test_feature_for_transfer'],
-                self.data_dic['train_label'],
-                self.data_dic['test_label_for_transfer']
-            ],
-            y=[
-                self.data_dic['train_label'],
-                self.data_dic['test_label_for_transfer']
-            ],
+
+        # data generator
+        training_generator = DataGenerator(
+            self.data_dic['train_feature'],
+            self.data_dic['test_feature_for_transfer'],
+            self.data_dic['train_label'],
+            self.data_dic['test_label_for_transfer'],
+            self.args.batch_size)
+        validation_generator = DataGenerator(
+            self.data_dic['validation_feature'],
+            self.data_dic['validation_feature_for_transfer'],
+            self.data_dic['validation_label'],
+            self.data_dic['validation_label_for_transfer'],
+            self.args.batch_size)
+
+        self.history = self.model.fit_generator(
+            generator=training_generator,
+            validation_data=validation_generator,
+            use_multiprocessing=True,
+            n_workers=6,
             epochs=self.args.epochs,
             verbose=1,
             class_weight=[self.class_weights, self.class_weights],
-            validation_data=([
-                self.data_dic['validation_feature'],
-                self.data_dic['validation_feature_for_transfer'],
-                self.data_dic['validation_label'],
-                self.data_dic['validation_label_for_transfer']
-            ], [
-                self.data_dic['validation_label'],
-                self.data_dic['validation_label_for_transfer']
-            ]),
-            batch_size=self.args.batch_size,
-            shuffle=True,
-            callbacks=[early_stopping, self.update_test_data])
+            callbacks=[early_stopping])
 
         self._save_model()
         self._load_exist_model()

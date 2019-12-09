@@ -30,15 +30,23 @@ def mmd(x):
     kvar = K.constant(value=np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                       dtype='float32')
 
+    temp = tf.map_fn(lambda cur: (cur[0], cur[1]), (x[0], x[2]))
+    print(K.expand_dims(x[0][
+                0], axis=0))
+    print(temp[1])
     train_tensor = tf.map_fn(
-        lambda cur_x: tf.cond(
-            K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(cur_x, axis=0),
-            lambda: K.expand_dims(K.zeros_like(cur_x), axis=0)), x[2])
+        lambda cur: tf.cond(
+            K.all(K.equal(cur[1], kvar)), lambda: K.expand_dims(cur[
+                0], axis=0), lambda: K.expand_dims(K.zeros_like(cur[0]),
+                                                   axis=0)), (x[0], x[2]), dtype=(tf.float32, tf.float32))
     test_tensor = tf.map_fn(
-        lambda cur_x: tf.cond(
-            K.all(K.equal(cur_x, kvar)), lambda: K.expand_dims(cur_x, axis=0),
-            lambda: K.expand_dims(K.zeros_like(cur_x), axis=0)), x[3])
+        lambda cur: tf.cond(
+            K.all(K.equal(cur[1], kvar)), lambda: K.expand_dims(cur[
+                0], axis=0), lambda: K.expand_dims(K.zeros_like(cur[0]),
+                                                   axis=0)), (x[1], x[3]))
 
+    print(train_tensor.shape)
+    print(test_tensor.shape)
     beta = 1.0
     x1x1 = gaussian_kernel(train_tensor, train_tensor, beta)
     x1x2 = gaussian_kernel(train_tensor, test_tensor, beta)
@@ -220,20 +228,25 @@ class TransferClassSensitiveModel():
         print(self.data_dic['train_feature'].shape)
 
         train_predict_result = self.model.predict([
-            self.data_dic['train_feature'], self.data_dic['test_feature_for_transfer'],
-            self.data_dic['train_label'], self.data_dic['test_label_for_transfer']
+            self.data_dic['train_feature'],
+            self.data_dic['test_feature_for_transfer'],
+            self.data_dic['train_label'],
+            self.data_dic['test_label_for_transfer']
         ])
 
         print("train has been predicted ...")
-        print(self.data_dic['test_feature'].shape, self.data_dic['test_feature_for_transfer'].shape,
-              self.data_dic['test_label'].shape, self.data_dic['test_label_for_transfer'].shape)
+        print(self.data_dic['test_feature'].shape,
+              self.data_dic['test_feature_for_transfer'].shape,
+              self.data_dic['test_label'].shape,
+              self.data_dic['test_label_for_transfer'].shape)
         test_predict_result = self.model.predict([
-            self.data_dic['test_feature'], self.data_dic['test_feature'], self.data_dic['test_label'],
-            self.data_dic['test_label']
+            self.data_dic['test_feature'], self.data_dic['test_feature'],
+            self.data_dic['test_label'], self.data_dic['test_label']
         ])
 
         print("test has been predicted ...")
-        np.save(self.dic_path + "/train_label_encoder.npy", self.data_dic['train_label'])
+        np.save(self.dic_path + "/train_label_encoder.npy",
+                self.data_dic['train_label'])
 
         np.save(self.dic_path + "/train_predict_result.npy",
                 train_predict_result[0])
@@ -282,11 +295,15 @@ class TransferClassSensitiveModel():
         ])
 
         train_layer_output = get_layer_output([
-            self.data_dic['train_feature'], self.data_dic['test_feature_for_transfer'],
-            self.data_dic['train_label'], self.data_dic['test_label_for_transfer']
+            self.data_dic['train_feature'],
+            self.data_dic['test_feature_for_transfer'],
+            self.data_dic['train_label'],
+            self.data_dic['test_label_for_transfer']
         ])
         test_layer_output = get_layer_output([
-            self.data_dic['test_feature'], self.data_dic['test_feature_for_transfer'], self.data_dic['test_label'],
+            self.data_dic['test_feature'],
+            self.data_dic['test_feature_for_transfer'],
+            self.data_dic['test_label'],
             self.data_dic['test_label_for_transfer']
         ])
 

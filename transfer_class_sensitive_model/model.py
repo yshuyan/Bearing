@@ -30,23 +30,19 @@ def mmd(x):
     kvar = K.constant(value=np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                       dtype='float32')
 
-    temp = tf.map_fn(lambda cur: (cur[0], cur[1]), (x[0], x[2]))
-    print(K.expand_dims(x[0][
-                0], axis=0))
-    print(temp[1])
-    train_tensor = tf.map_fn(
-        lambda cur: tf.cond(
-            K.all(K.equal(cur[1], kvar)), lambda: K.expand_dims(cur[
-                0], axis=0), lambda: K.expand_dims(K.zeros_like(cur[0]),
-                                                   axis=0)), (x[0], x[2]), dtype=(tf.float32, tf.float32))
-    test_tensor = tf.map_fn(
-        lambda cur: tf.cond(
-            K.all(K.equal(cur[1], kvar)), lambda: K.expand_dims(cur[
-                0], axis=0), lambda: K.expand_dims(K.zeros_like(cur[0]),
-                                                   axis=0)), (x[1], x[3]))
+    train_tensor = tf.map_fn(lambda cur: tf.cond(
+        K.all(K.equal(cur[1], kvar)), lambda: K.expand_dims(
+            K.zeros_like(cur[0]), axis=0), lambda: K.expand_dims(cur[0],
+                                                                 axis=0)),
+                             (x[0], x[2]),
+                             dtype=(tf.float32))
+    test_tensor = tf.map_fn(lambda cur: tf.cond(
+        K.all(K.equal(cur[1], kvar)), lambda: K.expand_dims(
+            K.zeros_like(cur[0]), axis=0), lambda: K.expand_dims(cur[0],
+                                                                 axis=0)),
+                            (x[1], x[3]),
+                            dtype=(tf.float32))
 
-    print(train_tensor.shape)
-    print(test_tensor.shape)
     beta = 1.0
     x1x1 = gaussian_kernel(train_tensor, train_tensor, beta)
     x1x2 = gaussian_kernel(train_tensor, test_tensor, beta)

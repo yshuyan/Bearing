@@ -9,9 +9,9 @@ from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.utils import class_weight
 
-from bearing.transfer_class_sensitive_model.model import \
+from bearing.transfer_iter_model.model import \
     TransferClassSensitiveModel
-from bearing.transfer_class_sensitive_model.tools import mkdir
+from bearing.transfer_iter_model.tools import mkdir
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)

@@ -19,6 +19,7 @@ class DataGenerator(keras.utils.Sequence):
                  train_label,
                  test_label,
                  model,
+                 one_hot_encoder,
                  batch_size=512,
                  shuffle=True):
         'Initialization'
@@ -27,6 +28,7 @@ class DataGenerator(keras.utils.Sequence):
         self.train_label = train_label
         self.test_label = test_label
         self.model = model
+        self.one_hot_encoder = one_hot_encoder
 
         self.batch_size = batch_size
         self.shuffle = shuffle
@@ -34,8 +36,8 @@ class DataGenerator(keras.utils.Sequence):
 
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return 10
-        # return int(np.floor(len(self.train_feature) / self.batch_size))
+        # return 10
+        return int(np.floor(len(self.train_feature) / self.batch_size))
 
     def __getitem__(self, index):
         'Generate one batch of data'
@@ -46,7 +48,6 @@ class DataGenerator(keras.utils.Sequence):
 
         # Generate data
         # X, y = self.__data_generation(indexes)
-        print('test label : ', self.test_label)
         return [
             self.train_feature[indexes], self.test_feature[indexes],
             self.train_label[indexes], self.test_label[indexes]
@@ -57,9 +58,12 @@ class DataGenerator(keras.utils.Sequence):
         # if self.model:
         if self.model:
             test_predict_result = self.model.predict([
-                self.train_feature, self.test_feature, self.train_label,
+                self.test_feature, self.test_feature, self.test_label,
                 self.test_label
-            ])
+            ])[0]
+
+            test_predict_result = np.reshape(np.argmax(test_predict_result, axis=1), (-1, 1))
+            test_predict_result = self.one_hot_encoder.transform(test_predict_result).toarray()
             print('epoch end test predict : ', test_predict_result)
             self.test_label = test_predict_result
         self.indexes = np.arange(len(self.train_feature))

@@ -326,13 +326,13 @@ class TransferClassSensitiveModel():
             self.data_dic['train_feature'],
             self.data_dic['test_feature_for_transfer'],
             self.data_dic['train_label'],
-            self.data_dic['test_label_for_transfer'], self.model, self.args.batch_size)
+            self.data_dic['test_label_for_transfer'], self.model,
+            self.one_hot_encoder, self.args.batch_size)
         validation_generator = DataGenerator(
             self.data_dic['validation_feature'],
             self.data_dic['validation_feature_for_transfer'],
             self.data_dic['validation_label'],
-            self.data_dic['validation_label_for_transfer'],
-            None,
+            self.data_dic['validation_label_for_transfer'], None, None,
             self.args.batch_size)
 
         self.history = self.model.fit_generator(

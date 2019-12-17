@@ -88,7 +88,7 @@ class TransferClassSensitiveModel():
         lstm_1_test = lstm_1_shared(conv_1_test_dropout)
 
         mmd_compute = Lambda(lambda x: mmd(x), name='mmd_compute')(
-            [lstm_1_train, lstm_1_test, input_train_label, input_test_label])
+            [lstm_1_train, lstm_1_test])
 
         lstm_1_train_dropout = Dropout(0.3)(lstm_1_train)
 

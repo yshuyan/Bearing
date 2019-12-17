@@ -24,31 +24,15 @@ def mmd(x):
     """
     maximum mean discrepancy (MMD) based on Gaussian kernel
     function for keras models (theano or tensorflow backend)
+    
     - Gretton, Arthur, et al. "A kernel method for the two-sample-problem."
     Advances in neural information processing systems. 2007.
     """
-    kvar = K.constant(value=np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                      dtype='float32')
-
-    train_tensor = tf.map_fn(lambda cur: tf.cond(
-        K.all(K.equal(cur[1], kvar)), lambda: K.expand_dims(
-            K.zeros_like(cur[0]), axis=0), lambda: K.expand_dims(cur[0],
-                                                                 axis=0)),
-                             (x[0], x[2]),
-                             dtype=(tf.float32))
-    test_tensor = tf.map_fn(lambda cur: tf.cond(
-        K.all(K.equal(cur[1], kvar)), lambda: K.expand_dims(
-            K.zeros_like(cur[0]), axis=0), lambda: K.expand_dims(cur[0],
-                                                                 axis=0)),
-                            (x[1], x[3]),
-                            dtype=(tf.float32))
-
     beta = 1.0
-    x1x1 = gaussian_kernel(train_tensor, train_tensor, beta)
-    x1x2 = gaussian_kernel(train_tensor, test_tensor, beta)
-    x2x2 = gaussian_kernel(test_tensor, test_tensor, beta)
+    x1x1 = gaussian_kernel(x[0], x[0], beta)
+    x1x2 = gaussian_kernel(x[0], x[1], beta)
+    x2x2 = gaussian_kernel(x[1], x[1], beta)
     diff = K.mean(x1x1) - 2 * K.mean(x1x2) + K.mean(x2x2)
-
     return diff
 
 
@@ -183,8 +167,8 @@ class TransferClassSensitiveModel():
         input_test = Input(shape=(self.args.sliding_window_length, 2),
                            name='input_test')
 
-        input_train_label = Input(shape=(10, ), name='input_train_label')
-        input_test_label = Input(shape=(10, ), name='input_test_label')
+        # input_train_label = Input(shape=(10, ), name='input_train_label')
+        # input_test_label = Input(shape=(10, ), name='input_test_label')
 
         conv_1_shared = Conv1D(10,
                                3,
@@ -209,7 +193,7 @@ class TransferClassSensitiveModel():
             return K.mean(item[0])
 
         mmd_compute = Lambda(lambda x: mmd(x), name='mmd_compute')(
-            [lstm_1_train, lstm_1_test, input_train_label, input_test_label])
+            [lstm_1_train, lstm_1_test])
 
         logger.info("Loading exist model...")
         self.model = load_model(self.dic_path + '/model.h5',

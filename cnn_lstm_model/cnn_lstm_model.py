@@ -3,7 +3,6 @@ import gc
 import json
 import logging
 import os
-import sys
 import time
 
 import matplotlib.pyplot as plt
@@ -16,13 +15,9 @@ from keras.models import Model, load_model
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 
-parent_path = os.path.dirname(sys.path[0])
-if parent_path not in sys.path:
-    sys.path.append(parent_path)
-
-import handle_result
-import plot_lstm_feature
-from constants import const
+from bearing.cnn_lstm_model.handle_result import generate_metrics
+from bearing.constants import const
+from bearing.plot_lstm_feature import plot
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -45,8 +40,8 @@ def mkdir(path):
 
     folder = os.path.exists(path)
 
-    if not folder:  #判断是否存在文件夹如果不存在则创建为文件夹
-        os.makedirs(path)  #makedirs 创建文件时如果路径不存在会创建这个路径
+    if not folder:  # 判断是否存在文件夹如果不存在则创建为文件夹
+        os.makedirs(path)  # makedirs 创建文件时如果路径不存在会创建这个路径
 
 
 def get_random_block_from_test(data, size):
@@ -247,38 +242,34 @@ class CnnLstmModel():
         self._save_figure(self.show_eval_figure)
         self._model_evaluate()
         self._get_predict_result_and_middle_feature()
-        handle_result.generate_metrics(self.dic_path)
-        plot_lstm_feature.plot(self.dic_path, self.train_motor, self.test_motor)
+        generate_metrics(self.dic_path)
+        plot(self.dic_path, self.train_motor, self.test_motor)
 
     def predict_with_exist_model(self):
         self._load_exist_model()
         self._get_predict_result_and_middle_feature()
-        handle_result.generate_metrics(self.dic_path)
-        plot_lstm_feature.plot(self.dic_path, self.train_motor, self.test_motor)
+        generate_metrics(self.dic_path)
+        plot(self.dic_path, self.train_motor, self.test_motor)
 
     def get_model(self):
         return self.model
 
 
 def main():
+    module_path = os.path.dirname(os.path.abspath(__file__))
+    pre_module_path = os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__)))
+
     params = {
         "train_motor": args.train_motor,
         "test_motor": 3,
         "train_flag": args.flag,
-        # "model_dic_path": "saved_model/2019_07_20_16_27_14_cnn_lstm_sliding_20_motor_train_2_test_3",
-        # model_path = "saved_model/2019_07_20_15_28_33_cnn_lstm_sliding_20_motor_train_0_test_3/model.h5"
-        # model_path = "saved_model/2019_07_20_16_05_49_cnn_lstm_sliding_20_motor_train_1_test_3/model.h5"
-        # "model_dic_path": "saved_model/2019_09_04_20_36_14_cnn_lstm_sliding_20_motor_train_0_test_0"
-        # "model_dic_path": "saved_model/2019_09_04_22_09_31_cnn_lstm_sliding_20_motor_train_3_test_3"
-        # "model_dic_path": "saved_model/2019_09_04_20_49_52_cnn_lstm_sliding_20_motor_train_1_test_1"
-        # "model_dic_path": "saved_model/2019_09_04_21_07_13_cnn_lstm_sliding_20_motor_train_2_test_2"
-        # "model_dic_path": "saved_model/2019_07_18_16_46_38_cnn_lstm_sliding_20_motor_train_1_test_3"
         "model_dic_path": args.model_dic_path
     }
     model_params = {
         "batch_size": 512,
         "hidden_size": 32,
-        "epochs": 100,
+        "epochs": 50,
         "verbose": 0,
         "shuffle": True,
         "early_stopping_patience": 5,
@@ -286,10 +277,10 @@ def main():
 
     if params["train_flag"]:
         # mkdir
-        dic_path = "saved_model/{}_cnn_lstm_sliding_{}_motor_train_{}_test_{}".format(
-            time.strftime("%Y_%m_%d_%H_%M_%S",
-                          time.localtime()), const.SLIDING_WINDOW_LENGTH,
-            params["train_motor"], params["test_motor"])
+        dic_path = "{}/saved_model/{}_cnn_lstm_sliding_{}_motor_train_{}_test_{}".format(
+            module_path, time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()),
+            const.SLIDING_WINDOW_LENGTH, params["train_motor"],
+            params["test_motor"])
         mkdir(dic_path)
         logger.info("mkdir : " + dic_path)
     else:
@@ -306,21 +297,22 @@ def main():
     # load data
     logger.info("Loading feature and label...")
     train_feature = np.load(
-        "../dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
-        format(params["train_motor"], const.SLIDING_WINDOW_LENGTH))
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy"
+        .format(pre_module_path, params["train_motor"],
+                const.SLIDING_WINDOW_LENGTH))
     train_label = np.load(
-        "../dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
-        format(params["train_motor"], const.SLIDING_WINDOW_LENGTH))
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy"
+        .format(pre_module_path, params["train_motor"],
+                const.SLIDING_WINDOW_LENGTH))
 
     test_feature = np.load(
-        "../dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
-        format(params["test_motor"], const.SLIDING_WINDOW_LENGTH))
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy"
+        .format(pre_module_path, params["test_motor"],
+                const.SLIDING_WINDOW_LENGTH))
     test_label = np.load(
-        "../dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
-        format(params["test_motor"], const.SLIDING_WINDOW_LENGTH))
-
-    # train_feature, test_feature, train_label, test_label = train_test_split(
-    #     train_feature, train_label, test_size=0.2, random_state=0)
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy"
+        .format(pre_module_path, params["test_motor"],
+                const.SLIDING_WINDOW_LENGTH))
 
     logger.info("train feature shape : {} train label shape : {}".format(
         train_feature.shape, train_label.shape))

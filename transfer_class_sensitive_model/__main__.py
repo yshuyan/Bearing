@@ -68,17 +68,17 @@ def main(args):
     # load data
     logger.info("Loading feature and label...")
     train_feature = np.load(
-        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
         format(pre_module_path, args.train_motor, args.sliding_window_length))
     train_label = np.load(
-        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
         format(pre_module_path, args.train_motor, args.sliding_window_length))
 
     test_feature = np.load(
-        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
         format(pre_module_path, args.test_motor, args.sliding_window_length))
     test_label = np.load(
-        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
         format(pre_module_path, args.test_motor, args.sliding_window_length))
     # test_label = np.load(
     #     "{}/Cnn_lstm_model/saved_model/2019_07_18_16_35_08_cnn_lstm_sliding_20_motor_train_0_test_3/test_predict_result_inverse.npy".format(pre_module_path)

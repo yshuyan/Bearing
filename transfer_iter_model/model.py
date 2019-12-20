@@ -341,7 +341,7 @@ class TransferClassSensitiveModel():
             use_multiprocessing=True,
             workers=6,
             epochs=self.args.epochs,
-            verbose=1,
+            verbose=0,
             class_weight=[self.class_weights, self.class_weights],
             callbacks=[early_stopping])
 

@@ -53,10 +53,8 @@ def main(args):
             module_path, time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()),
             args.sliding_window_length, args.train_motor, args.test_motor)
         mkdir(dic_path)
-        logger.info("mkdir : " + dic_path)
     else:
         dic_path = args.model_dic_path
-        logger.info("exit model dir : " + dic_path)
 
     logging.basicConfig(
         filename=dic_path + "/" +
@@ -66,28 +64,27 @@ def main(args):
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
     # load data
+    
     logger.info("Loading feature and label...")
     train_feature = np.load(
-        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
         format(pre_module_path, args.train_motor, args.sliding_window_length))
     train_label = np.load(
-        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
         format(pre_module_path, args.train_motor, args.sliding_window_length))
 
     test_feature = np.load(
-        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_feature_sample.npy".
         format(pre_module_path, args.test_motor, args.sliding_window_length))
     test_label = np.load(
-        "{}/dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
+        "{}/new_dataset/dataset_12k_motor_{}_sliding_window_{}_label_sample.npy".
         format(pre_module_path, args.test_motor, args.sliding_window_length))
-    # test_label = np.load(
-    #     "{}/Cnn_lstm_model/saved_model/2019_07_18_16_35_08_cnn_lstm_sliding_20_motor_train_0_test_3/test_predict_result_inverse.npy".format(pre_module_path)
-    # )
 
     logger.info("train feature shape : {} train label shape : {}".format(
         train_feature.shape, train_label.shape))
     logger.info("test feature shape  : {} test label shape  : {}".format(
         test_feature.shape, test_label.shape))
+
     # Handle outlier
     logger.info("Handle outlier...")
     train_feature = np.nan_to_num(train_feature)
@@ -153,11 +150,6 @@ def main(args):
         cur_model.train_model()
     else:
         cur_model.predict_with_exist_model()
-
-    # save params
-    # saved_params = {"params": args}
-    # with open(dic_path + '/saved_params.json', 'w') as fp:
-    #     json.dump(saved_params, fp)
 
 
 if __name__ == "__main__":

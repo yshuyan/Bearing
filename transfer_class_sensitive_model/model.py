@@ -115,10 +115,11 @@ class TransferClassSensitiveModel():
             input_train, input_test, input_train_label, input_test_label
         ],
                            outputs=[output, mmd_compute])
+        loss_fn = keras.optimizers.RMSprop(lr=0.003, rho=0.9)
 
         self.model.compile(loss=['categorical_crossentropy', get_mmd_loss],
                            loss_weights=[1., 0.1],
-                           optimizer='rmsprop',
+                           optimizer=loss_fn,
                            metrics={
                                'output_a': 'accuracy',
                                'output_b': None

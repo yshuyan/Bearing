@@ -8,14 +8,6 @@
 
 ![](https://raw.githubusercontent.com/yshuyan/Picture/master/img/t.png)
 
-## 数据集
-
-[CWRU轴承数据集]: https://csegroups.case.edu/bearingdatacenter/home
-
-设备：
-
-![](https://raw.githubusercontent.com/yshuyan/Picture/master/img/20200622230005.png)
-
 ## 软件环境
 
 框架：Keras（TensorFlow后端）

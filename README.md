@@ -1,7 +1,7 @@
 ## 背景
 
 工业数据的**分布差异**和**非均衡特性**影响了故障诊断与预测模型的准确性与泛化性。本项目旨在利用领域分布自适应算法和代价敏感非均衡算法来解决工业场景的实际问题。
-
+[CWRU轴承数据集]: https://csegroups.case.edu/bearingdatacenter/home
 ## 环境
 
 框架：Keras（TensorFlow后端）

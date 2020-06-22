@@ -1,8 +1,22 @@
 ## 背景
 
 工业数据的**分布差异**和**非均衡特性**影响了故障诊断与预测模型的准确性与泛化性。本项目旨在利用领域分布自适应算法和代价敏感非均衡算法来解决工业场景的实际问题。
+
+提出了一种基于深度领域自适应的非均衡故障诊断模型（Imbalanced Fault Diagnostics Model based on Domain Adaptation, IFDM-DA）。该模型利用代价敏感算法调整了损失函数中不同类别的权重，提高了分类器对故障样本的侧重程度。利用非监督的方法获得了测试集中样本的伪标签，并使用领域自适应中的条件分布自适应算法，计算了训练集与测试集中相同类别样本的特征差异。将该差异大小作为损失函数的一项，在训练过程中不断缩小训练集与测试集相同类别特征的差异，提升了模型的泛化性以及少数类（样本数量较少的故障类）的分类准确率。最后在凯斯西储大学（Case Western Reserve University, CWRU）轴承数据集上对整体实验的多项指标进行评估
+
+## 模型结构
+
+![](https://raw.githubusercontent.com/yshuyan/Picture/master/img/t.png)
+
+## 数据集
+
 [CWRU轴承数据集]: https://csegroups.case.edu/bearingdatacenter/home
-## 环境
+
+设备：
+
+![](https://raw.githubusercontent.com/yshuyan/Picture/master/img/20200622230005.png)
+
+## 软件环境
 
 框架：Keras（TensorFlow后端）
 
@@ -10,7 +24,9 @@
 
 配置：GPU（12G）
 
-相关包版本：  
+相关包版本：
+
+
 
 Package                            Version  
 ---------------------------------- ---------
@@ -39,17 +55,19 @@ seaborn                            0.9.0
 tensorboard                        1.14.0   
 tensorflow                         1.14.0   
 tensorflow-estimator               1.14.0   
+
 ## 代码
 
 ### 安装
 
 ```
-git clone 
+git clone https://github.com/yshuyan/Bearing.git
 ```
 
 解压至本地
 
 ### 目录树
+
 .
 ├── amount_sensitive_model   
 │   ├── amount_sensitive_model.py  
@@ -156,3 +174,42 @@ git clone
 --no-flag：调用已有模型，与--model-dic-path同时选用
 
 --model-dic-path：已有模型地址
+
+## 结果
+
+A/D实验四种模型各项指标总体对比
+
+|              | AUC      | F1      | 召回率  | 精确率  |
+| ------------ | -------- | ------- | ------- | ------- |
+| CNN-LSTM     | 0.94548  | 0.61280 | 0.63342 | 0.64868 |
+| CNN-LSTM(CS) | 0.949666 | 0.62376 | 0.63673 | 0.69048 |
+| IFDM-DA(NI)  | 0.96772  | 0.63065 | 0.60377 | 0.71378 |
+| IFDM-DA      | 0.96488  | 0.60112 | 0.63770 | 0.67665 |
+
+B/D实验四种模型各项指标总体对比
+
+|                | AUC     | F1      | 召回率  | 精确率  |
+| -------------- | ------- | ------- | ------- | ------- |
+| CNN-LSTM       | 0.91693 | 0.44437 | 0.51844 | 0.51252 |
+| CNN-LSTM（CS） | 0.95610 | 0.59294 | 0.63206 | 0.64278 |
+| IFDM-DA（NI）  | 0.96300 | 0.61324 | 0.62385 | 0.61124 |
+| IFDM-DA        | 0.96675 | 0.61048 | 0.60127 | 0.62674 |
+
+C/D实验四种模型各项指标总体对比
+
+|                | AUC     | F1      | 召回率  | 精确率  |
+| -------------- | ------- | ------- | ------- | ------- |
+| CNN-LSTM       | 0.97742 | 0.75073 | 0.73524 | 0.77806 |
+| CNN-LSTM（CS） | 0.98241 | 0.67227 | 0.66750 | 0.88959 |
+| IFDM-DA（NI）  | 0.98834 | 0.73741 | 0.77833 | 0.75035 |
+| IFDM-DA        | 0.99030 | 0.81726 | 0.77221 | 0.89612 |
+
+迁移效果：
+
+> 迁移前
+
+![](https://raw.githubusercontent.com/yshuyan/Picture/master/img/20200622230409.png)
+
+> 迁移后
+
+![](https://raw.githubusercontent.com/yshuyan/Picture/master/img/20200622230527.png)

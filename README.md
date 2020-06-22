@@ -10,38 +10,35 @@
 
 配置：GPU（12G）
 
-相关包版本：
-
-
+相关包版本：  
 
 Package                            Version  
 ---------------------------------- ---------
-conda                              4.7.12 
-conda-build                        3.18.8 
-conda-package-handling             1.3.11
-conda-verify                       3.4.2 
-flake8                             3.7.9 
-h5py                               2.9.0 
-imageio                            2.5.0 
-jupyter                            1.0.0 
-jupyterlab                         1.0.2 
-Keras                              2.2.4 
-Keras-Applications                 1.0.8 
-Keras-Preprocessing                1.1.0 
-numpy                              1.16.4
-numpydoc                           0.9.1 
-pandas                             0.24.2 
-pep8                               1.7.1 
-pip                                19.1.1 
-pylint                             2.3.1 
-scikit-image                       0.15.0 
-scikit-learn                       0.21.2 
-scipy                              1.3.0 
-seaborn                            0.9.0 
-tensorboard                        1.14.0 
-tensorflow                         1.14.0 
-tensorflow-estimator               1.14.0  
-
+conda                              4.7.12   
+conda-build                        3.18.8   
+conda-package-handling             1.3.11  
+conda-verify                       3.4.2   
+flake8                             3.7.9   
+h5py                               2.9.0   
+imageio                            2.5.0   
+jupyter                            1.0.0   
+jupyterlab                         1.0.2   
+Keras                              2.2.4   
+Keras-Applications                 1.0.8   
+Keras-Preprocessing                1.1.0   
+numpy                              1.16.4  
+numpydoc                           0.9.1   
+pandas                             0.24.2   
+pep8                               1.7.1    
+pip                                19.1.1   
+pylint                             2.3.1   
+scikit-image                       0.15.0   
+scikit-learn                       0.21.2   
+scipy                              1.3.0   
+seaborn                            0.9.0   
+tensorboard                        1.14.0   
+tensorflow                         1.14.0   
+tensorflow-estimator               1.14.0   
 ## 代码
 
 ### 安装

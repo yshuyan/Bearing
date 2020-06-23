@@ -61,7 +61,7 @@ git clone https://github.com/yshuyan/Bearing.git
 ### 目录树
 
 .
-├── amount_sensitive_model   # 基准模型 + 非均衡算法
+├── amount_sensitive_model   # 基准模型 + 非均衡算法  
 │   ├── amount_sensitive_model.py  
 │   ├── handle_result.py  
 │   ├── __init__.py  
@@ -70,7 +70,7 @@ git clone https://github.com/yshuyan/Bearing.git
 │       ├── amount_sensitive_model.cpython-37.pyc  
 │       ├── handle_result.cpython-37.pyc   
 │       └── __init__.cpython-37.pyc  
-├── cnn_lstm_model  # 基准模型
+├── cnn_lstm_model  # 基准模型  
 │   ├── cnn_lstm_model.py  
 │   ├── handle_result.py  
 │   ├── __init__.py  
@@ -79,17 +79,17 @@ git clone https://github.com/yshuyan/Bearing.git
 │       ├── cnn_lstm_model.cpython-37.pyc  
 │       ├── handle_result.cpython-37.pyc  
 │       └── __init__.cpython-37.pyc  
-├── constants.py  # 常变量定义
+├── constants.py  # 常变量定义  
 ├── .gitignore  
 ├── __init__.py  
 ├── __init__.pyc  
-├── plot_lstm_feature.py  # tsne 绘图
+├── plot_lstm_feature.py  # tsne 绘图  
 ├── __pycache__  
 │   ├── constants.cpython-37.pyc  
 │   ├── __init__.cpython-37.pyc  
 │   └── plot_lstm_feature.cpython-37.pyc  
 ├── README.md  
-├── transfer_class_sensitive_model  # 基准模型 + 非均衡 + 迁移（非迭代）
+├── transfer_class_sensitive_model  # 基准模型 + 非均衡 + 迁移（非迭代）  
 │   ├── handle_result.py  
 │   ├── __init__.py  
 │   ├── __init__.pyc  
@@ -103,7 +103,7 @@ git clone https://github.com/yshuyan/Bearing.git
 │   │   ├── model.cpython-37.pyc  
 │   │   └── tools.cpython-37.pyc  
 │   └── tools.py  
-├── transfer_iter_model  # 基准模型 + 非均衡 + 迁移（迭代）
+├── transfer_iter_model  # 基准模型 + 非均衡 + 迁移（迭代）  
 │   ├── data_generator.py  
 │   ├── dataset_loader.py  
 │   ├── handle_result.py  
@@ -119,7 +119,7 @@ git clone https://github.com/yshuyan/Bearing.git
 │   │   ├── model.cpython-37.pyc  
 │   │   └── tools.cpython-37.pyc  
 │   └── tools.py  
-├── transfer_model  # 测试
+├── transfer_model  # 测试  
 │   ├── handle_result copy.py  
 │   ├── handle_result.py  
 │   ├── __main__.py  
@@ -130,7 +130,7 @@ git clone https://github.com/yshuyan/Bearing.git
 │   │   └── handle_result.cpython-37.pyc  
 │   ├── tools.py  
 │   └── transfer_model.py  
-├── t-sne  # tsne 工具
+├── t-sne  # tsne 工具  
 │   ├── __init__.py  
 │   └── plot_lstm_feature.py  
 └── .vscode  

@@ -6,8 +6,10 @@
 
 ## 模型结构
 
-![](https://raw.githubusercontent.com/yshuyan/Picture/master/img/t.png)
-
+![](https://raw.githubusercontent.com/yshuyan/Picture/master/img/t.png)  
+首先，使用Deep CNN-LSTM基准模型对样本的故障进行诊断，该基准模型由4层CNN、2层LSTM以及三层全连接层叠加而成。  
+之后，使用基于类别权重的代价敏感非均衡策略，使得少数类误分类结果在损失函数的计算以及参数的更新中获得更大的权重，多数类所占权重相应减小，具体的权重大小为该类别在数据集中的样本数量反比。  
+自最后使用条件分布领域自适应算法拉近源域与目标域的条件分布差异，最小化源域和目标域相同类别下特征的分布差异。使用了迭代的伪标签算法来获得测试集的类别信息，为条件分布领域自适应算法的计算提供伪标签。  
 ## 软件环境
 
 框架：Keras（TensorFlow后端）
